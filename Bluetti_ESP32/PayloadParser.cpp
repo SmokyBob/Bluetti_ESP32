@@ -1,6 +1,7 @@
 #include "BluettiConfig.h"
-#include "MQTT.h"
 #include "PayloadParser.h"
+#include "BTooth.h"
+#include "IFTTT.h"
 
 
 uint16_t parse_uint_field(uint8_t data[]){
@@ -45,78 +46,19 @@ String pase_enum_field(uint8_t data[]){
     return "";
 }
 
-String map_field_name_tmp(enum field_names f_name){
-   switch(f_name) {
-      case DC_OUTPUT_POWER:
-        return "dc_output_power";
-        break; 
-      case AC_OUTPUT_POWER:
-        return "ac_output_power";
-        break; 
-      case DC_OUTPUT_ON:
-        return "dc_output_on";
-        break; 
-      case AC_OUTPUT_ON:
-        return "ac_output_on";
-        break; 
-      case POWER_GENERATION:
-        return "power_generation";
-        break;       
-      case TOTAL_BATTERY_PERCENT:
-        return "total_battery_percent";
-        break; 
-      case DC_INPUT_POWER:
-        return "dc_input_power";
-        break;
-      case AC_INPUT_POWER:
-        return "ac_input_power";
-        break;
-      case PACK_VOLTAGE:
-        return "pack_voltage";
-        break;
-      case SERIAL_NUMBER:
-        return "serial_number";
-        break;
-      case ARM_VERSION:
-        return "arm_version";
-        break;
-      case DSP_VERSION:
-        return "dsp_version";
-        break;
-      case DEVICE_TYPE:
-        return "device_type";
-        break;
-      case UPS_MODE:
-        return "ups_mode";
-        break;
-      case AUTO_SLEEP_MODE:
-        return "auto_sleep_mode";
-        break;
-      case GRID_CHANGE_ON:
-        return "grid_change_on";
-        break;
-      case INTERNAL_AC_VOLTAGE:
-        return "internal_ac_voltage";
-        break;
-      case INTERNAL_CURRENT_ONE:
-        return "internal_current_one";
-        break;
-      case PACK_NUM_MAX:
-        return "pack_max_num";
-      break;
-      default:
-        return "unknown";
-        break;
-   }
-  
-}
+
+
+uint16_t curr_TOTAL_BATTERY_PERCENT = 0;
+uint16_t curr_AC_INPUT_POWER = 0;
 
 void saveToParams(enum field_names field_name, String value){
   
-  #ifdef DEBUG
+  #if DEBUG <= 5
     Serial.print("field_name: ");
-    Serial.print(map_field_name_tmp(field_name).c_str());
+    Serial.print(map_field_name(field_name).c_str());
 
+    Serial.print(" ");
+    
     Serial.print("value: ");
     Serial.print(value.c_str());
   
@@ -124,6 +66,7 @@ void saveToParams(enum field_names field_name, String value){
   #endif
 
   //TODO: Save in Parameters for later access
+  
  
 }
 
@@ -190,12 +133,42 @@ void pase_bluetooth_data(uint8_t page, uint8_t offset, uint8_t* pData, size_t le
                     break;
                   
                 }
-                
+                if (bluetti_device_state[i].f_name == TOTAL_BATTERY_PERCENT){
+                  curr_TOTAL_BATTERY_PERCENT = parse_uint_field(data_payload_field);
+                }
+                if (bluetti_device_state[i].f_name == AC_INPUT_POWER){
+                  curr_AC_INPUT_POWER = parse_uint_field(data_payload_field);
+                }
             }
         }
+        #if DEBUG <= 5
+          Serial.println("");
+          
+          Serial.print("curr_TOTAL_BATTERY_PERCENT: ");
+          Serial.print(String(curr_TOTAL_BATTERY_PERCENT));
+          Serial.println("");
+
+          Serial.print("curr_AC_INPUT_POWER: ");
+          Serial.print(String(curr_AC_INPUT_POWER));
+          Serial.println("");
+
+          Serial.println("");
+          Serial.println("");
+        #endif
+
+        //Low Battery Notification
+        if (curr_TOTAL_BATTERY_PERCENT <= 25 && curr_AC_INPUT_POWER == 0){
+          makeIFTTTRequest("low");
+        }
         
+        //Batteri Charged
+        if (curr_TOTAL_BATTERY_PERCENT >= 75 && curr_AC_INPUT_POWER > 0){
+          makeIFTTTRequest("high");
+        }
       break; 
 
     }
+  
+    
     
 }

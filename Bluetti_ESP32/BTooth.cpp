@@ -25,8 +25,8 @@ class MyClientCallback : public BLEClientCallbacks {
   void onDisconnect(BLEClient* pclient) {
     connected = false;
     Serial.println("onDisconnect");
-    #ifdef RELAISMODE
-      #ifdef DEBUG
+    #if RELAISMODE == 1
+      #if DEBUG <= 5
         Serial.println("deactivate relais contact");
       #endif
       digitalWrite(RELAIS_PIN, RELAIS_LOW);
@@ -55,7 +55,7 @@ class BluettiAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
       doConnect = true;
       doScan = true;
     }else{
-      #if DEBUG == 1
+      #if DEBUG <= 5
         Serial.print(F("device id not matched, no connect "));
       #endif
 
@@ -83,7 +83,7 @@ static void notifyCallback(
   size_t length,
   bool isNotify) {
 
-#ifdef DEBUG
+#if DEBUG <= 4
     Serial.println("F01 - Write Response");
     /* pData Debug... */
     for (int i=1; i<=length; i++){
@@ -109,6 +109,11 @@ static void notifyCallback(
 }
 
 bool connectToServer() {
+  pinMode(2, OUTPUT);
+  for (int16_t i = 0;i++;i<10){
+    digitalWrite(2, HIGH);
+    delay(100);
+  }
     Serial.print(F("Forming a connection to "));
     Serial.println(bluettiDevice->getAddress().toString().c_str());
     
@@ -164,8 +169,8 @@ bool connectToServer() {
       pRemoteNotifyCharacteristic->registerForNotify(notifyCallback);
 
     connected = true;
-     #ifdef RELAISMODE
-      #ifdef DEBUG
+     #if RELAISMODE == 1
+      #if DEBUG <= 5
         Serial.println("activate relais contact");
       #endif
       digitalWrite(RELAIS_PIN, RELAIS_HIGH);
@@ -180,16 +185,16 @@ void handleBTCommandQueue(){
     bt_command_t command;
     if(xQueueReceive(sendQueue, &command, 0)) {
       
-#ifdef DEBUG
-    Serial.print("Write Request FF02 - Value: ");
-    
-    for(int i=0; i<8; i++){
-       if ( i % 2 == 0){ Serial.print(" "); };
-       Serial.printf("%02x", ((uint8_t*)&command)[i]);
-    }
-    
-    Serial.println("");
-#endif
+      #if DEBUG <= 4
+        Serial.print("Write Request FF02 - Value: ");
+        
+        for(int i=0; i<8; i++){
+          if ( i % 2 == 0){ Serial.print(" "); };
+          Serial.printf("%02x", ((uint8_t*)&command)[i]);
+        }
+        
+        Serial.println("");
+      #endif
       pRemoteWriteCharacteristic->writeValue((uint8_t*)&command, sizeof(command),true);
  
      };  

@@ -5,11 +5,11 @@
 
 typedef struct{
   int  salt = EEPROM_SALT;
-  char mqtt_server[100] = "127.0.0.1";
-  char mqtt_port[6]  = "1883";
-  char mqtt_username[40] = "";
-  char mqtt_password[40] = "";
   char bluetti_device_id[40] = "Bluetti Blutetooth Id";
+  char use_Meross[6] = "false";//true o false
+  //TODO: add meross parameters
+  char use_Relay[6] = "false";//true o false
+  //TODO: add Relay GPIO.. when tested
 } ESPBluettiSettings;
 
 extern ESPBluettiSettings get_esp32_bluetti_settings();
