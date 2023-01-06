@@ -5,7 +5,7 @@
 
 typedef struct{
   int  salt = EEPROM_SALT;
-  char mqtt_server[40] = "127.0.0.1";
+  char mqtt_server[100] = "127.0.0.1";
   char mqtt_port[6]  = "1883";
   char mqtt_username[40] = "";
   char mqtt_password[40] = "";

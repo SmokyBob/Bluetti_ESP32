@@ -45,13 +45,20 @@ class BluettiAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
     Serial.print(F("BLE Advertised Device found: "));
     Serial.println(advertisedDevice.toString().c_str());
 
-     ESPBluettiSettings settings = get_esp32_bluetti_settings();
+    ESPBluettiSettings settings = get_esp32_bluetti_settings();
     // We have found a device, let us now see if it contains the service we are looking for.
     if (advertisedDevice.haveServiceUUID() && advertisedDevice.isAdvertisingService(serviceUUID) && advertisedDevice.getName().compare(settings.bluetti_device_id)) {
+      Serial.println(F("device found stop scan."));
       BLEDevice::getScan()->stop();
+      Serial.println(F("set variables for next loop to connect."));
       bluettiDevice = new BLEAdvertisedDevice(advertisedDevice);
       doConnect = true;
       doScan = true;
+    }else{
+      #if DEBUG == 1
+        Serial.print(F("device id not matched, no connect "));
+      #endif
+
     }
   } 
 };
@@ -194,8 +201,9 @@ void sendBTCommand(bt_command_t command){
 }
 
 void handleBluetooth(){
-
+  
   if (doConnect == true) {
+    Serial.println(F("Trying to connect Bluetti BLE Server."));
     if (connectToServer()) {
       Serial.println(F("We are now connected to the Bluetti BLE Server."));
     } else {

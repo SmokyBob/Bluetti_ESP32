@@ -5,7 +5,7 @@
 
 void setup() {
   Serial.begin(115200);
-  #ifdef RELAISMODE
+  #if RELAISMODE == 1
     pinMode(RELAIS_PIN, OUTPUT);
     #ifdef DEBUG
       Serial.println("deactivate relais contact");
@@ -14,11 +14,11 @@ void setup() {
   #endif
   initBWifi(false);
   initBluetooth();
-  initMQTT();
+  // initMQTT();
 }
 
 void loop() {
   handleBluetooth();
-  handleMQTT(); 
+  // handleMQTT(); 
   handleWebserver();
 }

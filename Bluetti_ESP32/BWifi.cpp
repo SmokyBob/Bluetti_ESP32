@@ -10,7 +10,7 @@
 WebServer server(80);
 bool shouldSaveConfig = false;
 
-char mqtt_server[40] = "127.0.0.1";
+char mqtt_server[100] = "127.0.0.1";
 char mqtt_port[6]  = "1883";
 char bluetti_device_id[40] = "e.g. ACXXXYYYYYYYY";
 
@@ -51,7 +51,7 @@ void initBWifi(bool resetWifi){
     wifiConfig = defaults;
   }
 
-  WiFiManagerParameter custom_mqtt_server("server", "MQTT Server Address", mqtt_server, 40);
+  WiFiManagerParameter custom_mqtt_server("server", "MQTT Server Address", mqtt_server, 100);
   WiFiManagerParameter custom_mqtt_port("port", "MQTT Server Port", mqtt_port, 6);
   WiFiManagerParameter custom_mqtt_username("username", "MQTT Username", "", 40);
   WiFiManagerParameter custom_mqtt_password("password", "MQTT Password", "", 40, "type=password");
@@ -77,7 +77,7 @@ void initBWifi(bool resetWifi){
   wifiManager.autoConnect("Bluetti_ESP32");
 
   if (shouldSaveConfig) {
-     strlcpy(wifiConfig.mqtt_server, custom_mqtt_server.getValue(), 40);
+     strlcpy(wifiConfig.mqtt_server, custom_mqtt_server.getValue(), 100);
      strlcpy(wifiConfig.mqtt_port, custom_mqtt_port.getValue(), 6);
      strlcpy(wifiConfig.mqtt_username, custom_mqtt_username.getValue(), 40);
      strlcpy(wifiConfig.mqtt_password, custom_mqtt_password.getValue(), 40);
@@ -137,15 +137,16 @@ void handleRoot() {
   data = data + "<tr><td>uptime (ms):</td><td>" + millis() + "</td></tr>";
   data = data + "<tr><td>uptime (h):</td><td>" + millis() / 3600000 + "</td></tr>";
   data = data + "<tr><td>uptime (d):</td><td>" + millis() / 3600000/24 + "</td></tr>";
-  data = data + "<tr><td>mqtt server:</td><td>" + wifiConfig.mqtt_server + "</td></tr>";
-  data = data + "<tr><td>mqtt port:</td><td>" + wifiConfig.mqtt_port + "</td></tr>";
-  data = data + "<tr><td>mqqt connected:</td><td>" + isMQTTconnected() + "</td></tr>";
-  data = data + "<tr><td>mqqt last message time:</td><td>" + getLastMQTTMessageTime() + "</td></tr>";
-  data = data + "<tr><td>mqqt last devicestate time:</td><td>" + getLastMQTDeviceStateMessageTime() + "</td></tr>";
+  // data = data + "<tr><td>mqtt server:</td><td>" + wifiConfig.mqtt_server + "</td></tr>";
+  // data = data + "<tr><td>mqtt port:</td><td>" + wifiConfig.mqtt_port + "</td></tr>";
+  // data = data + "<tr><td>mqqt connected:</td><td>" + isMQTTconnected() + "</td></tr>";
+  // data = data + "<tr><td>mqqt last message time:</td><td>" + getLastMQTTMessageTime() + "</td></tr>";
+  // data = data + "<tr><td>mqqt last devicestate time:</td><td>" + getLastMQTDeviceStateMessageTime() + "</td></tr>";
   data = data + "<tr><td>Bluetti device id:</td><td>" + wifiConfig.bluetti_device_id + "</td></tr>";
   data = data + "<tr><td>BT connected:</td><td>" + isBTconnected() + "</td></tr>";
   data = data + "<tr><td>BT last message time:</td><td>" + getLastBTMessageTime() + "</td></tr>";
   data = data + "<tr><td>BT publishing error:</td><td>" + getPublishErrorCount() + "</td></tr>";
+  //TODO: Create function to read from the parameters the bluetti statuses and add them to the result
 
   server.sendContent(data);
   server.sendContent("</table></BODY></HTML>");

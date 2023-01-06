@@ -34,3 +34,6 @@
 # Platformio
 .pio
 build
+
+#vscode
+.vscode

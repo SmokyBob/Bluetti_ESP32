@@ -45,6 +45,88 @@ String pase_enum_field(uint8_t data[]){
     return "";
 }
 
+String map_field_name_tmp(enum field_names f_name){
+   switch(f_name) {
+      case DC_OUTPUT_POWER:
+        return "dc_output_power";
+        break; 
+      case AC_OUTPUT_POWER:
+        return "ac_output_power";
+        break; 
+      case DC_OUTPUT_ON:
+        return "dc_output_on";
+        break; 
+      case AC_OUTPUT_ON:
+        return "ac_output_on";
+        break; 
+      case POWER_GENERATION:
+        return "power_generation";
+        break;       
+      case TOTAL_BATTERY_PERCENT:
+        return "total_battery_percent";
+        break; 
+      case DC_INPUT_POWER:
+        return "dc_input_power";
+        break;
+      case AC_INPUT_POWER:
+        return "ac_input_power";
+        break;
+      case PACK_VOLTAGE:
+        return "pack_voltage";
+        break;
+      case SERIAL_NUMBER:
+        return "serial_number";
+        break;
+      case ARM_VERSION:
+        return "arm_version";
+        break;
+      case DSP_VERSION:
+        return "dsp_version";
+        break;
+      case DEVICE_TYPE:
+        return "device_type";
+        break;
+      case UPS_MODE:
+        return "ups_mode";
+        break;
+      case AUTO_SLEEP_MODE:
+        return "auto_sleep_mode";
+        break;
+      case GRID_CHANGE_ON:
+        return "grid_change_on";
+        break;
+      case INTERNAL_AC_VOLTAGE:
+        return "internal_ac_voltage";
+        break;
+      case INTERNAL_CURRENT_ONE:
+        return "internal_current_one";
+        break;
+      case PACK_NUM_MAX:
+        return "pack_max_num";
+      break;
+      default:
+        return "unknown";
+        break;
+   }
+  
+}
+
+void saveToParams(enum field_names field_name, String value){
+  
+  #ifdef DEBUG
+    Serial.print("field_name: ");
+    Serial.print(map_field_name_tmp(field_name).c_str());
+
+    Serial.print("value: ");
+    Serial.print(value.c_str());
+  
+    Serial.println("");
+  #endif
+
+  //TODO: Save in Parameters for later access
+ 
+}
+
 void pase_bluetooth_data(uint8_t page, uint8_t offset, uint8_t* pData, size_t length){
     char mqttMessage[200];
     switch(pData[1]){
@@ -71,37 +153,38 @@ void pase_bluetooth_data(uint8_t page, uint8_t offset, uint8_t* pData, size_t le
                       data_payload_field[p_index] = pData[i-1];
                       p_index++;
                 }
-
+                
                 switch (bluetti_device_state[i].f_type){
                  
                   case UINT_FIELD:
-                    publishTopic(bluetti_device_state[i].f_name, String(parse_uint_field(data_payload_field)));
+                    
+                    saveToParams(bluetti_device_state[i].f_name, String(parse_uint_field(data_payload_field)));
                     break;
     
                   case BOOL_FIELD:
-                    publishTopic(bluetti_device_state[i].f_name, String((int)parse_bool_field(data_payload_field)));
+                    saveToParams(bluetti_device_state[i].f_name, String((int)parse_bool_field(data_payload_field)));
                     break;
     
                   case DECIMAL_FIELD:
-                    publishTopic(bluetti_device_state[i].f_name, String(parse_decimal_field(data_payload_field, bluetti_device_state[i].f_scale ), 2) );
+                    saveToParams(bluetti_device_state[i].f_name, String(parse_decimal_field(data_payload_field, bluetti_device_state[i].f_scale ), 2) );
                     break;
     
                   case SN_FIELD:  
                     char sn[16];
                     sprintf(sn, "%lld", parse_serial_field(data_payload_field));
-                    publishTopic(bluetti_device_state[i].f_name, String(sn));
+                    saveToParams(bluetti_device_state[i].f_name, String(sn));
                     break;
     
                   case VERSION_FIELD:
-                    publishTopic(bluetti_device_state[i].f_name, String(parse_version_field(data_payload_field),2) );    
+                    saveToParams(bluetti_device_state[i].f_name, String(parse_version_field(data_payload_field),2) );    
                     break;
 
                   case STRING_FIELD:
-                    publishTopic(bluetti_device_state[i].f_name, parse_string_field(data_payload_field));
+                    saveToParams(bluetti_device_state[i].f_name, parse_string_field(data_payload_field));
                     break;
 
                   case ENUM_FIELD:
-                    publishTopic(bluetti_device_state[i].f_name, pase_enum_field(data_payload_field));
+                    saveToParams(bluetti_device_state[i].f_name, pase_enum_field(data_payload_field));
                     break;
                   default:
                     break;
