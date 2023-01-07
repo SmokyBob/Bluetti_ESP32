@@ -1,8 +1,6 @@
 #include "BluettiConfig.h"
 #include "PayloadParser.h"
-#include "BTooth.h"
 #include "IFTTT.h"
-
 
 uint16_t parse_uint_field(uint8_t data[]){
     return ((uint16_t) data[0] << 8 ) | (uint16_t) data[1];

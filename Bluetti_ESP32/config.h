@@ -9,7 +9,7 @@
 
 #define EEPROM_SALT 13374
 
-#define DEVICE_NAME "BLUETTI-MQTT"
+#define DEVICE_NAME "BLUETTI-ESP32"
 
 #define BLUETOOTH_QUERY_MESSAGE_DELAY 10000
 #define DEVICE_STATE_UPDATE  5
@@ -19,7 +19,7 @@
 #define RELAIS_LOW LOW
 #define RELAIS_HIGH HIGH
 
-#define MAX_DISCONNECTED_TIME_UNTIL_REBOOT 2 //device will reboot when wlan/BT/MQTT is not connectet within x Minutes
+#define MAX_DISCONNECTED_TIME_UNTIL_REBOOT 2 //device will reboot when wlan/BT is not connectet within x Minutes
 
 #ifndef BLUETTI_TYPE
   #define BLUETTI_TYPE BLUETTI_EB3A
