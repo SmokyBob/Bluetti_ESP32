@@ -113,7 +113,8 @@ void initBWifi(bool resetWifi){
 
   server.begin();
   Serial.println("HTTP server started");
-
+  Serial.print("Bluetti Device id to search for:");
+  Serial.println(wifiConfig.bluetti_device_id);
 }
 
 void handleWebserver() {
@@ -121,6 +122,10 @@ void handleWebserver() {
 }
 
 void handleRoot() {
+  #if DEBUG <= 4
+  Serial.print("handleRoot() running on core ");
+  Serial.println(xPortGetCoreID());
+  #endif
   server.setContentLength(CONTENT_LENGTH_UNKNOWN);
   server.send(200, "text/html; charset=utf-8", "");
   server.sendContent("<HTML><HEAD><TITLE>device status</TITLE></HEAD><BODY>");

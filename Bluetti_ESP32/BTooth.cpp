@@ -104,6 +104,10 @@ static void notifyCallback(
     bt_command_t command_handle;
     if(xQueueReceive(commandHandleQueue, &command_handle, 500)){
       pase_bluetooth_data(command_handle.page, command_handle.offset, pData, length);
+      #if DEBUG <= 4
+      Serial.print("BT notifyCallback() running on core ");
+      Serial.println(xPortGetCoreID());
+      #endif
     }
    
 }

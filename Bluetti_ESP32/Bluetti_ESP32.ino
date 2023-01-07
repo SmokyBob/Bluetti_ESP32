@@ -13,11 +13,9 @@ void setup() {
   #endif
   initBWifi(false);
   initBluetooth();
-  // initMQTT();
 }
 
 void loop() {
   handleBluetooth();
-  // handleMQTT(); 
   handleWebserver();
 }
