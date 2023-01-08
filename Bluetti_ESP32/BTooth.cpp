@@ -64,6 +64,7 @@ class BluettiAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
 };
 
 void initBluetooth(){
+  
   BLEDevice::init("");
   BLEScan* pBLEScan = BLEDevice::getScan();
   pBLEScan->setAdvertisedDeviceCallbacks(new BluettiAdvertisedDeviceCallbacks());
@@ -103,7 +104,7 @@ static void notifyCallback(
 
     bt_command_t command_handle;
     if(xQueueReceive(commandHandleQueue, &command_handle, 500)){
-      pase_bluetooth_data(command_handle.page, command_handle.offset, pData, length);
+      parse_bluetooth_data(command_handle.page, command_handle.offset, pData, length);
       #if DEBUG <= 4
       Serial.print("BT notifyCallback() running on core ");
       Serial.println(xPortGetCoreID());
@@ -183,13 +184,12 @@ bool connectToServer() {
     return true;
 }
 
-
 void handleBTCommandQueue(){
 
     bt_command_t command;
     if(xQueueReceive(sendQueue, &command, 0)) {
       
-      #if DEBUG <= 4
+      #if DEBUG <= 5
         Serial.print("Write Request FF02 - Value: ");
         
         for(int i=0; i<8; i++){

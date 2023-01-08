@@ -19,4 +19,6 @@
  #include "Device_AC500.h"
 #endif
 
+extern QueueHandle_t bluetti_data_queue;
+
 #endif

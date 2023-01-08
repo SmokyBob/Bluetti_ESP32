@@ -99,3 +99,24 @@ String map_field_name(enum field_names f_name){
    }
   
 }
+
+String convertMilliSecondsToHHMMSS (int value) {
+  
+  int valSec = value / 1000;
+  // compute h, m, s
+  int h = (valSec / 3600);
+  int m = ((valSec % 3600) / 60);
+  int s = (valSec % 60);
+  // add leading zero if needed
+  String hh = (h<10)?("0"+String(h)):String(h);
+  String mm = (m<10)?("0"+String(m)):String(m);
+  String ss = (s<10)?("0"+String(s)):String(s);
+
+  return hh + ':' + mm + ":" + ss;
+}
+
+void copyArray(device_field_data_t* src, device_field_data_t* dst, int len) {
+    for (int i = 0; i < len; i++) {
+        *dst++ = *src++;
+    }
+}

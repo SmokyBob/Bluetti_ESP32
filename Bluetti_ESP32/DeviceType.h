@@ -14,20 +14,21 @@ enum field_types{
    TYPE_UNDEFINED
 };
 
+//Same Order as the bluetti_device_state array for faster access
 enum field_names {
-  DC_OUTPUT_POWER,
-  DC_OUTPUT_ON,
-  AC_OUTPUT_POWER,
-  AC_OUTPUT_ON,
-  POWER_GENERATION,
-  TOTAL_BATTERY_PERCENT, 
-  DC_INPUT_POWER,
-  AC_INPUT_POWER,
-  PACK_VOLTAGE,
+  DEVICE_TYPE, 
   SERIAL_NUMBER,
   ARM_VERSION,
   DSP_VERSION,
-  DEVICE_TYPE, 
+  DC_INPUT_POWER,
+  AC_INPUT_POWER,
+  AC_OUTPUT_POWER,
+  DC_OUTPUT_POWER,
+  TOTAL_BATTERY_PERCENT, 
+  POWER_GENERATION,
+  AC_OUTPUT_ON,
+  DC_OUTPUT_ON,
+  PACK_VOLTAGE,
   UPS_MODE,
   AUTO_SLEEP_MODE,
   GRID_CHANGE_ON,
@@ -45,6 +46,7 @@ typedef struct device_field_data {
   int8_t f_scale;
   int8_t f_enum;
   enum field_types f_type;
+  String f_value;
 } device_field_data_t;
 
 
