@@ -26,7 +26,6 @@ ESPBluettiSettings get_esp32_bluetti_settings(){
 }
 
 void readConfigs(){
-  
   Serial.println("Loading Values from EEPROM");
   EEPROM.begin(512);
   EEPROM.get(0, wifiConfig);
@@ -34,7 +33,6 @@ void readConfigs(){
 }
 
 void saveConfig(){
-  //TODO: use preferences
   Serial.println("Saving Values to EEPROM");
   EEPROM.begin(512);
   EEPROM.put(0, wifiConfig);
@@ -82,7 +80,7 @@ void root_HTML() {
   data = data + "<tr><td>SSID:</td><td>" + WiFi.SSID() + "</td>"+
                 "<td><a href='http://"+WiFi.localIP().toString()+"/resetWifiConfig' target='_blank'>reset WIFI config</a></td></tr>";
   data = data + "<tr><td>WiFiRSSI:</td><td>" + (String)WiFi.RSSI() + "</td>"+
-                "<td><b><a href='http://"+WiFi.localIP().toString()+"/resetConfig' target='_blank' style='color:red'>reset FULL config</a></b></td></tr>";
+                "<td><b><a href='http://"+WiFi.localIP().toString()+"/config'>Change Configuration</a></b></td></tr>";
   data = data + "<tr><td>MAC:</td><td>" + WiFi.macAddress() + "</td></tr>";
   data = data + "<tr><td>uptime :</td><td>" + convertMilliSecondsToHHMMSS(millis()) + "</td></tr>";
   data = data + "<tr><td>uptime (d):</td><td>" + millis() / 3600000/24 + "</td></tr>";
@@ -180,7 +178,7 @@ void command_HTML() {
   }
 }
 
-void config_HTML(bool paramsSaved = false){
+void config_HTML(bool paramsSaved = false,bool resetRequired = false){
   //html to edit ESPBluettiSettings values
   String data = "<HTML>";
   data = data + "<HEAD>"+
@@ -188,12 +186,19 @@ void config_HTML(bool paramsSaved = false){
                 "</HEAD>";
   data = data + "<BODY>";
   if (paramsSaved){
-    data = data + "<span style='font-weight:bold;color:red'>Configuration Saved. Only AP Mode changes require a restart</span>";
+    if(resetRequired)
+      data = data + "<script>setTimeout(function() { location.href = './'; }, 2000);</script>";
+    
+    data = data + "<span style='font-weight:bold;color:red'>Configuration Saved."+
+                  ((resetRequired)?"Restart required (will be done in 2 second)":"")+
+                  "</span><br/><br/>";
   }
+  data = data + "<a href='http://"+WiFi.localIP().toString()+"/resetConfig' target='_blank' style='color:red'>reset FULL configuration</a>";
   data = data + "<form action='/config' method='POST'>";
   data = data + "<table border='0'>";
   data = data + "<tr><td>Bluetti device id:</td>"+
-                "<td><input type='text' size=40 name='bluetti_device_id' value='"+ wifiConfig.bluetti_device_id  +"' /></td></tr>";
+                "<td><input type='text' size=40 name='bluetti_device_id' value='"+ wifiConfig.bluetti_device_id  +"' /></td>"+
+                "<td><a href='http://"+WiFi.localIP().toString()+"/'>Home</a></td></tr>";
   data = data + "<tr><td>Start in AP Mode:</td>"+
                 "<td><input type='checkbox' name='APMode' value='APModeBool' "+ ((wifiConfig.APMode)?"checked":"") + +" /></td></tr>";
   //TODO: add other parameters accordingly
@@ -202,13 +207,44 @@ void config_HTML(bool paramsSaved = false){
                 "</form></BODY></HTML>";
 
   server.send(200, "text/html; charset=utf-8", data);
+
+  if(resetRequired){
+    delay(2000);
+    ESP.restart();
+  }
+
 }
 
 void config_POST(){
-  //TODO: manage post data and update the config
+  bool resetRequired = false;
+
+  char tmp[40];
+  strcpy(tmp, server.arg("bluetti_device_id").c_str());
+
+  if (strcmp(tmp,wifiConfig.bluetti_device_id) != 0){
+    strcpy(wifiConfig.bluetti_device_id,tmp);
+    resetRequired=true;
+  }
+
+  if (server.hasArg("APMode")) {
+    if (wifiConfig.APMode != true){
+      resetRequired = true;
+    }
+    wifiConfig.APMode = true;
+  }else{
+    if (wifiConfig.APMode != false){
+      resetRequired = true;
+    }
+    wifiConfig.APMode = false;
+  }
+
+  //TODO: manage other parameters accordingly
+
+  //Save configuration to Eprom
+  saveConfig();
 
   //Config Data Updated, refresh the page 
-  config_HTML(true);
+  config_HTML(true,resetRequired);
 }
 
 #pragma endregion Async Ws handlers

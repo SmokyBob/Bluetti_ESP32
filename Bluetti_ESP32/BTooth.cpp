@@ -62,8 +62,14 @@ class BluettiAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
 };
 
 void initBluetooth(){
-  
-  if (settings.bluetti_device_id!=""){
+  settings = get_esp32_bluetti_settings();
+  #if DEBUG <=5
+  Serial.print("strlen(settings.bluetti_device_id) = ");
+  Serial.println(strlen(settings.bluetti_device_id));
+  #endif
+
+  if (strlen(settings.bluetti_device_id)!=0){
+
     BLEDevice::init("");
     BLEScan* pBLEScan = BLEDevice::getScan();
     pBLEScan->setAdvertisedDeviceCallbacks(new BluettiAdvertisedDeviceCallbacks());
@@ -71,7 +77,7 @@ void initBluetooth(){
     pBLEScan->setWindow(449);
     pBLEScan->setActiveScan(true);
     pBLEScan->start(5, false);
-    
+
     commandHandleQueue = xQueueCreate( 5, sizeof(bt_command_t ) );
     sendQueue = xQueueCreate( 5, sizeof(bt_command_t) );
   }
@@ -212,7 +218,7 @@ void sendBTCommand(bt_command_t command){
 void handleBluetooth(){
   
   //Check BT only if an Id is available
-  if (settings.bluetti_device_id!=""){
+  if (strlen(settings.bluetti_device_id)!=0){
     if (doConnect == true) {
       Serial.println(F("Trying to connect Bluetti BLE Server."));
       if (connectToServer()) {
