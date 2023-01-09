@@ -6,17 +6,18 @@
 #include <ESPmDNS.h>
 #include "utils.h"
 #include <WebServer.h>
+#include <nvs_flash.h>
 
 WebServer server(80);
-bool shouldSaveConfig = false;
+// bool shouldSaveConfig = false;
 
-char bluetti_device_id[40] = "e.g. ACXXXYYYYYYYY";
-char use_Meross[6] = "false";
-char use_Relay[6] = "false";
+// char bluetti_device_id[40] = "e.g. ACXXXYYYYYYYY";
+// char use_Meross[6] = "false";
+// char use_Relay[6] = "false";
 
-void saveConfigCallback () {
-  shouldSaveConfig = true;
-}
+// void saveConfigCallback () {
+//   shouldSaveConfig = true;
+// }
 
 ESPBluettiSettings wifiConfig;
 
@@ -24,15 +25,15 @@ ESPBluettiSettings get_esp32_bluetti_settings(){
     return wifiConfig;  
 }
 
-void eeprom_read(){
-  //TODO: use preferences
+void readConfigs(){
+  
   Serial.println("Loading Values from EEPROM");
   EEPROM.begin(512);
   EEPROM.get(0, wifiConfig);
   EEPROM.end();
 }
 
-void eeprom_saveconfig(){
+void saveConfig(){
   //TODO: use preferences
   Serial.println("Saving Values to EEPROM");
   EEPROM.begin(512);
@@ -41,11 +42,21 @@ void eeprom_saveconfig(){
   EEPROM.end();
 }
 
+void resetConfig(){
+  WiFiManager wifiManager;
+  wifiManager.resetSettings();
+
+  ESPBluettiSettings defaults;
+  wifiConfig = defaults;
+  saveConfig();
+}
+
+
 #pragma region Async Ws handlers
 
 device_field_data_t bluetti_state_data[sizeof(bluetti_device_state)/sizeof(device_field_data_t)];
 
-void root() {
+void root_HTML() {
   #if DEBUG <= 4
   Serial.print("handleRoot() running on core ");
   Serial.println(xPortGetCoreID());
@@ -66,16 +77,19 @@ void root() {
                 "</HEAD>";
   data = data + "<BODY>";
   data = data + "<table border='0'>";
-  data = data + "<tr><td>host:</td><td>" + WiFi.localIP().toString() + "</td><td><a href='http://"+WiFi.localIP().toString()+"/rebootDevice' target='_blank'>reboot this device</a></td></tr>";
-  data = data + "<tr><td>SSID:</td><td>" + WiFi.SSID() + "</td><td><a href='http://"+WiFi.localIP().toString()+"/resetConfig' target='_blank'>reset device config</a></td></tr>";
-  data = data + "<tr><td>WiFiRSSI:</td><td>" + (String)WiFi.RSSI() + "</td></tr>";
+  data = data + "<tr><td>host:</td><td>" + WiFi.localIP().toString() + "</td>"+
+                "<td><a href='http://"+WiFi.localIP().toString()+"/rebootDevice' target='_blank'>reboot this device</a></td></tr>";
+  data = data + "<tr><td>SSID:</td><td>" + WiFi.SSID() + "</td>"+
+                "<td><a href='http://"+WiFi.localIP().toString()+"/resetWifiConfig' target='_blank'>reset WIFI config</a></td></tr>";
+  data = data + "<tr><td>WiFiRSSI:</td><td>" + (String)WiFi.RSSI() + "</td>"+
+                "<td><b><a href='http://"+WiFi.localIP().toString()+"/resetConfig' target='_blank' style='color:red'>reset FULL config</a></b></td></tr>";
   data = data + "<tr><td>MAC:</td><td>" + WiFi.macAddress() + "</td></tr>";
   data = data + "<tr><td>uptime :</td><td>" + convertMilliSecondsToHHMMSS(millis()) + "</td></tr>";
   data = data + "<tr><td>uptime (d):</td><td>" + millis() / 3600000/24 + "</td></tr>";
-  data = data + "<tr><td>Bluetti device id:</td><td>" + wifiConfig.bluetti_device_id + "</td></tr>";
-  data = data + "<tr><td>BT connected:</td><td>" + isBTconnected() + "</td></tr>";
+  data = data + "<tr><td>Bluetti device id:</td><td>" + wifiConfig.bluetti_device_id+ "</td></tr>";
+  data = data + "<tr><td>BT connected:</td><td><input type='checkbox' " + ((isBTconnected())?"checked":"") + " onclick='return false;' /></td></tr>";
   data = data + "<tr><td>BT last message time:</td><td>" + convertMilliSecondsToHHMMSS(getLastBTMessageTime()) + "</td></tr>";
-  data = data + "<tr><td colspan='4'><hr></td></tr>";
+  data = data + "<tr><td colspan='3'><hr></td></tr>";
   if (isBTconnected()){
     
     data = data + "<tr><td colspan='4'><b>Device States</b></td></tr>";
@@ -111,7 +125,7 @@ void notFound() {
   server.send(404, "text/plain", message);
 }
 
-void handleCommand(String topic, String payloadData) {
+void handleBTCommand(String topic, String payloadData) {
   String topic_path = topic;
   
   Serial.print("Command arrived: ");
@@ -140,7 +154,7 @@ void handleCommand(String topic, String payloadData) {
 const char* PARAM_TYPE = "type";
 const char* PARAM_VAL = "value";
 
-void commandHandler() {
+void command_HTML() {
   
   String topic = "";
   String payload = "";
@@ -160,84 +174,119 @@ void commandHandler() {
     server.send(200, "text/plain", "Hello, POST: " + 
       String(PARAM_TYPE) + " " + topic + " - "+
       String(PARAM_VAL) + " " + payload);
-
-     handleCommand(topic,payload);
+    
+    //TODO: Check if the topic is one for the commands (bluetti_device_command[])
+    handleBTCommand(topic,payload);
   }
 }
+
+void config_HTML(bool paramsSaved = false){
+  //html to edit ESPBluettiSettings values
+  String data = "<HTML>";
+  data = data + "<HEAD>"+
+                "<TITLE>"+DEVICE_NAME+" Config</TITLE>" +
+                "</HEAD>";
+  data = data + "<BODY>";
+  if (paramsSaved){
+    data = data + "<span style='font-weight:bold;color:red'>Configuration Saved. Only AP Mode changes require a restart</span>";
+  }
+  data = data + "<form action='/config' method='POST'>";
+  data = data + "<table border='0'>";
+  data = data + "<tr><td>Bluetti device id:</td>"+
+                "<td><input type='text' size=40 name='bluetti_device_id' value='"+ wifiConfig.bluetti_device_id  +"' /></td></tr>";
+  data = data + "<tr><td>Start in AP Mode:</td>"+
+                "<td><input type='checkbox' name='APMode' value='APModeBool' "+ ((wifiConfig.APMode)?"checked":"") + +" /></td></tr>";
+  //TODO: add other parameters accordingly
+  data = data + "</table>"+
+                "<input type='submit' value='Save'>"+
+                "</form></BODY></HTML>";
+
+  server.send(200, "text/html; charset=utf-8", data);
+}
+
+void config_POST(){
+  //TODO: manage post data and update the config
+
+  //Config Data Updated, refresh the page 
+  config_HTML(true);
+}
+
 #pragma endregion Async Ws handlers
 
 void initBWifi(bool resetWifi){
 
-  eeprom_read();
+  readConfigs();
   
   if (wifiConfig.salt != EEPROM_SALT) {
     Serial.println("Invalid settings in EEPROM, trying with defaults");
     ESPBluettiSettings defaults;
     wifiConfig = defaults;
   }
-
-  WiFiManagerParameter custom_bluetti_device("bluetti", "Bluetti Bluetooth ID", bluetti_device_id, 40);
-  WiFiManagerParameter custom_use_Meross("bMeross", "Use Meross", use_Meross, 6);
-  WiFiManagerParameter custom_use_Relay("bRelay", "Use Relay", use_Relay, 6);
-
+  
   WiFiManager wifiManager;
 
   if (resetWifi){
     wifiManager.resetSettings();
-    ESPBluettiSettings defaults;
-    wifiConfig = defaults;
-    eeprom_saveconfig();
+    //Reset AP Mode
+    readConfigs();
+    wifiConfig.APMode = false;
+    saveConfig();
   }
 
-  wifiManager.setSaveConfigCallback(saveConfigCallback);
+  // wifiManager.setSaveConfigCallback(saveConfigCallback);
   
-  wifiManager.addParameter(&custom_bluetti_device);
-  wifiManager.addParameter(&custom_use_Meross);
-  wifiManager.addParameter(&custom_use_Relay);
+  if (!wifiConfig.APMode){
+    //Use configurations to connect to Wifi Network
+    wifiManager.autoConnect(DEVICE_NAME);
+    // Wait for connection
+    while (WiFi.status() != WL_CONNECTED) {
+      delay(500);
+      Serial.print(".");
+    }
+    Serial.println("");
+    Serial.println("IP address: ");
+    Serial.println(WiFi.localIP());
 
-  wifiManager.autoConnect(DEVICE_NAME);
+    if (MDNS.begin(DEVICE_NAME)) {
+      Serial.println("MDNS responder started");
+    }
 
-  if (shouldSaveConfig) {
-     strlcpy(wifiConfig.bluetti_device_id, custom_bluetti_device.getValue(), 40);
-     strlcpy(wifiConfig.use_Meross, custom_use_Meross.getValue(), 6);
-     strlcpy(wifiConfig.use_Relay, custom_use_Relay.getValue(), 6);
-     eeprom_saveconfig();
+  }else{
+    //Start AP MODE
+    WiFi.softAP(DEVICE_NAME);
+    Serial.println("");
+    Serial.println("IP address: ");
+    Serial.println(WiFi.softAPIP());
   }
-
-  // Wait for connection
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-
-  Serial.println("");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-
-
-  if (MDNS.begin(DEVICE_NAME)) {
-    Serial.println("MDNS responder started");
-  }
-
+  
   //WebServerConfig
-  server.on("/",HTTP_GET,root);
+  server.on("/",HTTP_GET,root_HTML);
   server.on("/rebootDevice", HTTP_GET, [] () {
     server.send(200, "text/plain", "reboot in 2sec");
     delay(2000);
     ESP.restart();
   });
-  server.on("/resetConfig", HTTP_GET, [] () {
+  server.on("/resetWifiConfig", HTTP_GET, [] () {
     server.send(200, "text/plain", "reset Wifi and reboot in 2sec");
     delay(2000);
     initBWifi(true);
   });
-
-  //TODO: endpoints to update the config WITHOUT reset
+  server.on("/resetConfig", HTTP_GET, [] () {
+    server.send(200, "text/plain", "reset FULL CONFIG and reboot in 2sec");
+    resetConfig();
+    delay(2000);
+    ESP.restart();
+  });
+  
 
   //Commands come in with a form to the /post endpoint
-  server.on("/post", HTTP_POST, commandHandler);
+  server.on("/post", HTTP_POST, command_HTML);
   //ONLY FOR TESTING 
-  server.on("/get", HTTP_GET, commandHandler);
+  server.on("/get", HTTP_GET, command_HTML);
+
+  //endpoints to update the config WITHOUT reset
+  server.on("/config", HTTP_GET, [] () {config_HTML(false);});
+  server.on("/config", HTTP_POST, config_POST);
   
   server.onNotFound(notFound);
 

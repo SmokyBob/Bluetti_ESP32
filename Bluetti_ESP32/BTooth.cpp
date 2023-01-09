@@ -18,6 +18,8 @@ QueueHandle_t sendQueue;
 
 unsigned long lastBTMessage = 0;
 
+ESPBluettiSettings settings = get_esp32_bluetti_settings();
+
 class MyClientCallback : public BLEClientCallbacks {
   void onConnect(BLEClient* pclient) {
   }
@@ -45,7 +47,6 @@ class BluettiAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
     Serial.print(F("BLE Advertised Device found: "));
     Serial.println(advertisedDevice.toString().c_str());
 
-    ESPBluettiSettings settings = get_esp32_bluetti_settings();
     // We have found a device, let us now see if it contains the service we are looking for.
     if (advertisedDevice.haveServiceUUID() && advertisedDevice.isAdvertisingService(serviceUUID) && advertisedDevice.getName().compare(settings.bluetti_device_id)) {
       Serial.println(F("device found stop scan."));
@@ -55,26 +56,25 @@ class BluettiAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
       doConnect = true;
       doScan = true;
     }else{
-      #if DEBUG <= 5
-        Serial.print(F("device id not matched, no connect "));
-      #endif
-
+      Serial.println(F("device id not matched, no connect "));
     }
   } 
 };
 
 void initBluetooth(){
   
-  BLEDevice::init("");
-  BLEScan* pBLEScan = BLEDevice::getScan();
-  pBLEScan->setAdvertisedDeviceCallbacks(new BluettiAdvertisedDeviceCallbacks());
-  pBLEScan->setInterval(1349);
-  pBLEScan->setWindow(449);
-  pBLEScan->setActiveScan(true);
-  pBLEScan->start(5, false);
-  
-  commandHandleQueue = xQueueCreate( 5, sizeof(bt_command_t ) );
-  sendQueue = xQueueCreate( 5, sizeof(bt_command_t) );
+  if (settings.bluetti_device_id!=""){
+    BLEDevice::init("");
+    BLEScan* pBLEScan = BLEDevice::getScan();
+    pBLEScan->setAdvertisedDeviceCallbacks(new BluettiAdvertisedDeviceCallbacks());
+    pBLEScan->setInterval(1349);
+    pBLEScan->setWindow(449);
+    pBLEScan->setActiveScan(true);
+    pBLEScan->start(5, false);
+    
+    commandHandleQueue = xQueueCreate( 5, sizeof(bt_command_t ) );
+    sendQueue = xQueueCreate( 5, sizeof(bt_command_t) );
+  }
 }
 
 
@@ -211,50 +211,53 @@ void sendBTCommand(bt_command_t command){
 
 void handleBluetooth(){
   
-  if (doConnect == true) {
-    Serial.println(F("Trying to connect Bluetti BLE Server."));
-    if (connectToServer()) {
-      Serial.println(F("We are now connected to the Bluetti BLE Server."));
-    } else {
-      Serial.println(F("We have failed to connect to the server; there is nothin more we will do."));
-    }
-    doConnect = false;
-  }
-
-  if ((millis() - lastBTMessage) > (MAX_DISCONNECTED_TIME_UNTIL_REBOOT * 60000)){ 
-    Serial.println(F("BT is disconnected over allowed limit, reboot device"));
-    ESP.restart();
-  }
-
-  if (connected) {
-
-    // poll for device state
-    if ( millis() - lastBTMessage > BLUETOOTH_QUERY_MESSAGE_DELAY){
-
-       bt_command_t command;
-       command.prefix = 0x01;
-       command.field_update_cmd = 0x03;
-       command.page = bluetti_polling_command[pollTick].f_page;
-       command.offset = bluetti_polling_command[pollTick].f_offset;
-       command.len = (uint16_t) bluetti_polling_command[pollTick].f_size << 8;
-       command.check_sum = modbus_crc((uint8_t*)&command,6);
-
-       xQueueSend(commandHandleQueue, &command, portMAX_DELAY);
-       xQueueSend(sendQueue, &command, portMAX_DELAY);
-
-       if (pollTick == sizeof(bluetti_polling_command)/sizeof(device_field_data_t)-1 ){
-           pollTick = 0;
-       } else {
-           pollTick++;
-       }
-            
-      lastBTMessage = millis();
+  //Check BT only if an Id is available
+  if (settings.bluetti_device_id!=""){
+    if (doConnect == true) {
+      Serial.println(F("Trying to connect Bluetti BLE Server."));
+      if (connectToServer()) {
+        Serial.println(F("We are now connected to the Bluetti BLE Server."));
+      } else {
+        Serial.println(F("We have failed to connect to the server; there is nothin more we will do."));
+      }
+      doConnect = false;
     }
 
-    handleBTCommandQueue();
-    
-  }else if(doScan){
-    BLEDevice::getScan()->start(0);  
+    if ((millis() - lastBTMessage) > (MAX_DISCONNECTED_TIME_UNTIL_REBOOT * 60000)){ 
+      Serial.println(F("BT is disconnected over allowed limit, reboot device"));
+      ESP.restart();
+    }
+
+    if (connected) {
+
+      // poll for device state
+      if ( millis() - lastBTMessage > BLUETOOTH_QUERY_MESSAGE_DELAY){
+
+        bt_command_t command;
+        command.prefix = 0x01;
+        command.field_update_cmd = 0x03;
+        command.page = bluetti_polling_command[pollTick].f_page;
+        command.offset = bluetti_polling_command[pollTick].f_offset;
+        command.len = (uint16_t) bluetti_polling_command[pollTick].f_size << 8;
+        command.check_sum = modbus_crc((uint8_t*)&command,6);
+
+        xQueueSend(commandHandleQueue, &command, portMAX_DELAY);
+        xQueueSend(sendQueue, &command, portMAX_DELAY);
+
+        if (pollTick == sizeof(bluetti_polling_command)/sizeof(device_field_data_t)-1 ){
+            pollTick = 0;
+        } else {
+            pollTick++;
+        }
+              
+        lastBTMessage = millis();
+      }
+
+      handleBTCommandQueue();
+      
+    }else if(doScan){
+      BLEDevice::getScan()->start(0);  
+    }
   }
 }
 

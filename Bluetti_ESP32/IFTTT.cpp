@@ -80,6 +80,7 @@ void makeIFTTTRequest(String event) {
     int timeout = 5 * 10; // 5 seconds             
     while(!!!client.available() && (timeout-- > 0)){
       delay(100);
+      timeout--;
     }
     if(!!!client.available()) {
       Serial.println("No response...");
@@ -88,7 +89,7 @@ void makeIFTTTRequest(String event) {
       Serial.write(client.read());
     }
     
-    Serial.println("\nclosing connection");
+    Serial.println("\nClosing connection");
     client.stop(); 
 
     if (event=="low"){

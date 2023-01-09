@@ -16,7 +16,7 @@ void setup() {
   //initialize the queue used to share device state between processes
   bluetti_data_queue = xQueueCreate(1,sizeof(bluetti_device_state));
 
-  initBWifi(false);//AsyncWebServer configured here
+  initBWifi(false);//Init Wifi and WebServer
   initBluetooth();
 }
 

@@ -3,13 +3,18 @@
 #include "Arduino.h"
 #include "config.h"
 
+//N.B. if changed, update the function config_HTML to edit the fields
 typedef struct{
   int  salt = EEPROM_SALT;
-  char bluetti_device_id[40] = "Bluetti Blutetooth Id";
-  char use_Meross[6] = "false";//true o false
-  //TODO: add meross parameters
-  char use_Relay[6] = "false";//true o false
-  //TODO: add Relay GPIO.. when tested
+  char bluetti_device_id[40] = "";
+  bool APMode = false;//Start in AP Mode
+
+
+  // bool use_Meross = false;
+  // //TODO: add meross parameters
+  // bool use_Relay = false;
+  // //TODO: add Relay GPIO.. when tested
+
 } ESPBluettiSettings;
 
 extern ESPBluettiSettings get_esp32_bluetti_settings();
