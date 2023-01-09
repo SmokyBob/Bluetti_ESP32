@@ -4,7 +4,8 @@
 
 // Info = 5
 // Log = 4
-#define DEBUG 5
+#define DEBUG 100 //For relase set to 100, only setup infos will be printed
+#define logHeap 0 //1=log heap value in loop
 //#define RESET_WIFI_SETTINGS   1
 
 #define EEPROM_SALT 13374
