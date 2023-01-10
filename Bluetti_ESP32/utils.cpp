@@ -100,13 +100,13 @@ String map_field_name(enum field_names f_name){
   
 }
 
-String convertMilliSecondsToHHMMSS (int value) {
+String convertMilliSecondsToHHMMSS (unsigned long value) {
   
-  int valSec = value / 1000;
+  unsigned long valSec = value / 1000;
   // compute h, m, s
-  int h = (valSec / 3600);
-  int m = ((valSec % 3600) / 60);
-  int s = (valSec % 60);
+  unsigned long h = (valSec / 3600);
+  unsigned long m = ((valSec % 3600) / 60);
+  unsigned long s = (valSec % 60);
   // add leading zero if needed
   String hh = (h<10)?("0"+String(h)):String(h);
   String mm = (m<10)?("0"+String(m)):String(m);

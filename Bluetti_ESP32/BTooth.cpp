@@ -119,6 +119,8 @@ static void notifyCallback(
    
 }
 
+BLEClient* pClient;
+
 bool connectToServer() {
   pinMode(2, OUTPUT);
   for (int16_t i = 0;i++;i<10){
@@ -128,7 +130,7 @@ bool connectToServer() {
     Serial.print(F("Forming a connection to "));
     Serial.println(bluettiDevice->getAddress().toString().c_str());
     
-    BLEClient*  pClient  = BLEDevice::createClient();
+    pClient = BLEDevice::createClient();
     Serial.println(F(" - Created client"));
 
     pClient->setClientCallbacks(new MyClientCallback());
@@ -186,8 +188,14 @@ bool connectToServer() {
       #endif
       digitalWrite(RELAIS_PIN, RELAIS_HIGH);
     #endif
+
     return true;
-    return true;
+}
+
+void disconnectBT(){
+  //Mainly for testing
+  pClient->disconnect(); 
+  connected = false; //to be sure
 }
 
 void handleBTCommandQueue(){

@@ -26,5 +26,4 @@
   #define BLUETTI_TYPE BLUETTI_EB3A
 #endif
 
-
 #endif

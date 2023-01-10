@@ -6,7 +6,6 @@
 #include <ESPmDNS.h>
 #include "utils.h"
 #include <WebServer.h>
-#include <nvs_flash.h>
 
 WebServer server(80);
 // bool shouldSaveConfig = false;
@@ -85,7 +84,8 @@ void root_HTML() {
   data = data + "<tr><td>uptime :</td><td>" + convertMilliSecondsToHHMMSS(millis()) + "</td></tr>";
   data = data + "<tr><td>uptime (d):</td><td>" + millis() / 3600000/24 + "</td></tr>";
   data = data + "<tr><td>Bluetti device id:</td><td>" + wifiConfig.bluetti_device_id+ "</td></tr>";
-  data = data + "<tr><td>BT connected:</td><td><input type='checkbox' " + ((isBTconnected())?"checked":"") + " onclick='return false;' /></td></tr>";
+  data = data + "<tr><td>BT connected:</td><td><input type='checkbox' " + ((isBTconnected())?"checked":"") + " onclick='return false;' /></td>"+
+                ((!isBTconnected())?"":"<td><input type='button' onclick='location.href=""./btDisconnect""' value='Disconnect from BT'/></td>")+"</tr>";
   data = data + "<tr><td>BT last message time:</td><td>" + convertMilliSecondsToHHMMSS(getLastBTMessageTime()) + "</td></tr>";
   data = data + "<tr><td colspan='3'><hr></td></tr>";
   if (isBTconnected()){
@@ -247,6 +247,12 @@ void config_POST(){
   config_HTML(true,resetRequired);
 }
 
+void disableBT_HTML(){
+  disconnectBT();
+  root_HTML();
+
+}
+
 #pragma endregion Async Ws handlers
 
 void initBWifi(bool resetWifi){
@@ -299,6 +305,7 @@ void initBWifi(bool resetWifi){
   server.on("/",HTTP_GET,root_HTML);
   server.on("/rebootDevice", HTTP_GET, [] () {
     server.send(200, "text/plain", "reboot in 2sec");
+    disconnectBT();//Gracefully disconnect from BT
     delay(2000);
     ESP.restart();
   });
@@ -323,6 +330,9 @@ void initBWifi(bool resetWifi){
   //endpoints to update the config WITHOUT reset
   server.on("/config", HTTP_GET, [] () {config_HTML(false);});
   server.on("/config", HTTP_POST, config_POST);
+
+  //BTDisconnect //TODO: post only with JS... when the html code is in a separate file
+  server.on("/btDisconnect", HTTP_GET, disableBT_HTML);
   
   server.onNotFound(notFound);
 
