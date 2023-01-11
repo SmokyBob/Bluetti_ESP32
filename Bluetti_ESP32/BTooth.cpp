@@ -16,6 +16,8 @@ struct command_handle {
 QueueHandle_t commandHandleQueue;
 QueueHandle_t sendQueue;
 
+BLEScan* pBLEScan;
+
 unsigned long lastBTMessage = 0;
 
 ESPBluettiSettings settings = get_esp32_bluetti_settings();
@@ -51,6 +53,7 @@ class BluettiAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
     if (advertisedDevice.haveServiceUUID() && advertisedDevice.isAdvertisingService(serviceUUID) && advertisedDevice.getName().compare(settings.bluetti_device_id)) {
       Serial.println(F("device found stop scan."));
       BLEDevice::getScan()->stop();
+      pBLEScan->clearResults();   // delete results fromBLEScan buffer to release memory
       Serial.println(F("set variables for next loop to connect."));
       bluettiDevice = new BLEAdvertisedDevice(advertisedDevice);
       doConnect = true;
@@ -71,7 +74,7 @@ void initBluetooth(){
   if (strlen(settings.bluetti_device_id)!=0){
 
     BLEDevice::init("");
-    BLEScan* pBLEScan = BLEDevice::getScan();
+    pBLEScan = BLEDevice::getScan();
     pBLEScan->setAdvertisedDeviceCallbacks(new BluettiAdvertisedDeviceCallbacks());
     pBLEScan->setInterval(1349);
     pBLEScan->setWindow(449);
