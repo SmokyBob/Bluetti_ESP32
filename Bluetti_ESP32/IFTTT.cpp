@@ -39,26 +39,29 @@ void makeIFTTTRequest(String event) {
     Serial.print("Connecting to "); 
     Serial.print(IFTTT_Server);
     
-    WiFiClient client;
+    WiFiClient reqClient;
     int retries = 5;
-    while(!!!client.connect(IFTTT_Server, 80) && (retries-- > 0)) {
+
+    while(!!!reqClient.connect(IFTTT_Server, 80) && (retries-- > 0)) {
+      #if DEBUG <= 5
       Serial.print(".");
+      #endif
     }
-    Serial.println();
-    if(!!!client.connected()) {
+
+    if(!!!reqClient.connected()) {
       Serial.println("Failed to connect...");
     }
     
     Serial.print("Request resource: "); 
     if (event=="low"){
+      #if DEBUG <= 5
       Serial.println(resource_low);
-      client.println(String("GET ") + resource_low + " HTTP/1.1");
+      #endif
+      reqClient.println(String("GET ") + resource_low + " HTTP/1.1");
     }else{
       Serial.println(resource_high);
-      client.println(String("GET ") + resource_high + " HTTP/1.1");
+      reqClient.println(String("GET ") + resource_high + " HTTP/1.1");
     }
-    
-    
 
     // Temperature in Celsius
     // String jsonObject = String("{\"value1\":\"") + bme.readTemperature() + "\",\"value2\":\"" + (bme.readPressure()/100.0F)
@@ -68,29 +71,33 @@ void makeIFTTTRequest(String event) {
     /*String jsonObject = String("{\"value1\":\"") + (1.8 * bme.readTemperature() + 32) + "\",\"value2\":\"" 
                         + (bme.readPressure()/100.0F) + "\",\"value3\":\"" + bme.readHumidity() + "\"}";*/
                         
-    client.println(String("Host: ") + IFTTT_Server); 
-    client.println("Connection: close");
-    client.println();
-    // client.println("Connection: close\r\nContent-Type: application/json");
-    // client.print("Content-Length: ");
-    // client.println(jsonObject.length());
+    reqClient.println(String("Host: ") + IFTTT_Server); 
+    reqClient.println("Connection: close");
+    reqClient.println();
+    // reqClient.println("Connection: close\r\nContent-Type: application/json");
+    // reqClient.print("Content-Length: ");
+    // reqClient.println(jsonObject.length());
     
-    // client.println(jsonObject);
+    // reqClient.println(jsonObject);
           
-    int timeout = 5 * 10; // 5 seconds             
-    while(!!!client.available() && (timeout-- > 0)){
-      delay(100);
+    int timeout = 5;// 5 seconds             
+    while(!!!reqClient.available() && (timeout-- > 0)){
+      delay(1000);
       timeout--;
     }
-    if(!!!client.available()) {
+    
+    if(!!!reqClient.available()) {
       Serial.println("No response...");
     }
-    while(client.available()){
-      Serial.write(client.read());
+
+    #if DEBUG <= 5
+    while(reqClient.available()){
+      Serial.write(reqClient.read());
     }
-    
     Serial.println("\nClosing connection");
-    client.stop(); 
+    #endif
+    
+    reqClient.stop(); 
 
     if (event=="low"){
       millis_low = millis();

@@ -220,7 +220,7 @@ void handleBTCommandQueue(){
 
 void sendBTCommand(bt_command_t command){
     bt_command_t cmd = command;
-    xQueueSend(sendQueue, &cmd, 0);
+    xQueueSend(sendQueue, &cmd, 500);
 }
 
 void handleBluetooth(){
@@ -255,16 +255,19 @@ void handleBluetooth(){
         command.len = (uint16_t) bluetti_polling_command[pollTick].f_size << 8;
         command.check_sum = modbus_crc((uint8_t*)&command,6);
 
-        xQueueSend(commandHandleQueue, &command, portMAX_DELAY);
-        xQueueSend(sendQueue, &command, portMAX_DELAY);
+        if (xQueueSend(commandHandleQueue, &command, 500) &&
+            xQueueSend(sendQueue, &command, 500))
+        {
+          //mark BT message as handled only if we could add them to the queues
+          lastBTMessage = millis();
+        }
 
         if (pollTick == sizeof(bluetti_polling_command)/sizeof(device_field_data_t)-1 ){
             pollTick = 0;
         } else {
             pollTick++;
         }
-              
-        lastBTMessage = millis();
+        
       }
 
       handleBTCommandQueue();

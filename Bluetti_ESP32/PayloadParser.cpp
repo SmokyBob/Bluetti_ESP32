@@ -136,7 +136,7 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t* pData, size_t l
       curr_TOTAL_BATTERY_PERCENT = return_data[TOTAL_BATTERY_PERCENT].f_value.toInt();
       curr_AC_INPUT_POWER = return_data[AC_INPUT_POWER].f_value.toInt();
 
-      //Error Management
+      //Queue data only if useful data is received
       if (!(curr_TOTAL_BATTERY_PERCENT == 0 && curr_AC_INPUT_POWER == 0 )){
         #if DEBUG <= 4
           Serial.println("TOTAL_BATTERY_PERCENT: " +return_data[TOTAL_BATTERY_PERCENT].f_value);

@@ -60,7 +60,7 @@ void root_HTML() {
   #endif
   device_field_data_t return_data[sizeof(bluetti_device_state)/sizeof(device_field_data_t)];
   
-  if (xQueueReceive(bluetti_data_queue, &return_data, 0)==pdTRUE){
+  if (xQueueReceive(bluetti_data_queue, &return_data, 200)==pdTRUE){
     #if DEBUG <= 5
     Serial.println("Data Read from queue ");
     #endif
