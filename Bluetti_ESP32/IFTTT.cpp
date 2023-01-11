@@ -1,4 +1,5 @@
 #include "IFTTT.h"
+#include "config.h"
 #ifdef ESP32
   #include <WiFi.h>
 #else
@@ -46,63 +47,65 @@ void makeIFTTTRequest(String event) {
       #if DEBUG <= 5
       Serial.print(".");
       #endif
+      retries --;
     }
 
     if(!!!reqClient.connected()) {
       Serial.println("Failed to connect...");
-    }
+    }else{
     
-    Serial.print("Request resource: "); 
-    if (event=="low"){
+      Serial.print("Request resource: "); 
+      if (event=="low"){
+        #if DEBUG <= 5
+        Serial.println(resource_low);
+        #endif
+        reqClient.println(String("GET ") + resource_low + " HTTP/1.1");
+      }else{
+        Serial.println(resource_high);
+        reqClient.println(String("GET ") + resource_high + " HTTP/1.1");
+      }
+
+      // Temperature in Celsius
+      // String jsonObject = String("{\"value1\":\"") + bme.readTemperature() + "\",\"value2\":\"" + (bme.readPressure()/100.0F)
+      //                     + "\",\"value3\":\"" + bme.readHumidity() + "\"}";
+                          
+      // Comment the previous line and uncomment the next line to publish temperature readings in Fahrenheit                    
+      /*String jsonObject = String("{\"value1\":\"") + (1.8 * bme.readTemperature() + 32) + "\",\"value2\":\"" 
+                          + (bme.readPressure()/100.0F) + "\",\"value3\":\"" + bme.readHumidity() + "\"}";*/
+                          
+      reqClient.println(String("Host: ") + IFTTT_Server); 
+      reqClient.println("Connection: close");
+      reqClient.println();
+      // reqClient.println("Connection: close\r\nContent-Type: application/json");
+      // reqClient.print("Content-Length: ");
+      // reqClient.println(jsonObject.length());
+      
+      // reqClient.println(jsonObject);
+            
+      int timeout = 5;// 5 seconds             
+      while(!!!reqClient.available() && (timeout-- > 0)){
+        delay(1000);
+        timeout--;
+      }
+      
+      if(!!!reqClient.available()) {
+        Serial.println("No response...");
+      }
+
       #if DEBUG <= 5
-      Serial.println(resource_low);
+      while(reqClient.available()){
+        Serial.write(reqClient.read());
+      }
+      Serial.println("\nClosing connection");
       #endif
-      reqClient.println(String("GET ") + resource_low + " HTTP/1.1");
-    }else{
-      Serial.println(resource_high);
-      reqClient.println(String("GET ") + resource_high + " HTTP/1.1");
-    }
+      
+      reqClient.stop(); 
 
-    // Temperature in Celsius
-    // String jsonObject = String("{\"value1\":\"") + bme.readTemperature() + "\",\"value2\":\"" + (bme.readPressure()/100.0F)
-    //                     + "\",\"value3\":\"" + bme.readHumidity() + "\"}";
-                        
-    // Comment the previous line and uncomment the next line to publish temperature readings in Fahrenheit                    
-    /*String jsonObject = String("{\"value1\":\"") + (1.8 * bme.readTemperature() + 32) + "\",\"value2\":\"" 
-                        + (bme.readPressure()/100.0F) + "\",\"value3\":\"" + bme.readHumidity() + "\"}";*/
-                        
-    reqClient.println(String("Host: ") + IFTTT_Server); 
-    reqClient.println("Connection: close");
-    reqClient.println();
-    // reqClient.println("Connection: close\r\nContent-Type: application/json");
-    // reqClient.print("Content-Length: ");
-    // reqClient.println(jsonObject.length());
-    
-    // reqClient.println(jsonObject);
-          
-    int timeout = 5;// 5 seconds             
-    while(!!!reqClient.available() && (timeout-- > 0)){
-      delay(1000);
-      timeout--;
-    }
-    
-    if(!!!reqClient.available()) {
-      Serial.println("No response...");
-    }
-
-    #if DEBUG <= 5
-    while(reqClient.available()){
-      Serial.write(reqClient.read());
-    }
-    Serial.println("\nClosing connection");
-    #endif
-    
-    reqClient.stop(); 
-
-    if (event=="low"){
-      millis_low = millis();
-    }else{
-      millis_high = millis();
+      if (event=="low"){
+        millis_low = millis();
+      }else{
+        millis_high = millis();
+      }
     }
   }
 }
