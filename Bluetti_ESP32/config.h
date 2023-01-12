@@ -30,7 +30,7 @@
 #define WDT_TIMEOUT 10
 
 //NTP configs
-static char* ntpServer = "pool.ntp.org";
+static String ntpServer = "pool.ntp.org";
 static long  gmtOffset_sec = 3600*(+1);
 static int   daylightOffset_sec = 3600;
 

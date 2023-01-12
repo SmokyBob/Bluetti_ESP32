@@ -18,7 +18,7 @@ void setup() {
   esp_task_wdt_add(NULL); //add current thread to WDT watch
 
   //Init time
-  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer.c_str());
 
   //initialize the queue used to share device state between processes
   bluetti_data_queue = xQueueCreate(1,sizeof(bluetti_device_state));
