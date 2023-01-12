@@ -2,6 +2,7 @@
 #define BWIFI_H
 #include "Arduino.h"
 #include "config.h"
+#include "time.h"
 
 //N.B. if changed, update the function config_HTML to edit the fields
 typedef struct{
@@ -16,6 +17,8 @@ typedef struct{
   // //TODO: add Relay GPIO.. when tested
 
 } ESPBluettiSettings;
+
+extern String runningSince;
 
 extern ESPBluettiSettings get_esp32_bluetti_settings();
 extern void initBWifi(bool resetWifi);

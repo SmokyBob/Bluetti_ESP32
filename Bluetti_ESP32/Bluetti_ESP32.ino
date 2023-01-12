@@ -4,9 +4,6 @@
 #include "BluettiConfig.h"
 #include <esp_task_wdt.h>
 
-//10 seconds WDT
-#define WDT_TIMEOUT 10
-
 void setup() {
   Serial.begin(115200);
   #if RELAISMODE == 1
@@ -19,6 +16,9 @@ void setup() {
 
   esp_task_wdt_init(WDT_TIMEOUT, true); //enable panic so ESP32 restarts
   esp_task_wdt_add(NULL); //add current thread to WDT watch
+
+  //Init time
+  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
 
   //initialize the queue used to share device state between processes
   bluetti_data_queue = xQueueCreate(1,sizeof(bluetti_device_state));
@@ -45,21 +45,21 @@ void loop() {
   }
 
   if (printHeap){
-    Serial.println("------------------------ heap loop start        " + String(ESP.getHeapSize()-ESP.getHeapSize()));
+    Serial.println("------------------------ heap loop start        " + String(ESP.getHeapSize()-ESP.getFreeHeap()));
   }
   #endif
   
   handleBluetooth();
   #if logHeap > 0
   if (printHeap){
-    Serial.println("------------------------ after BT handle        " + String(ESP.getHeapSize()-ESP.getHeapSize()));
+    Serial.println("------------------------ after BT handle        " + String(ESP.getHeapSize()-ESP.getFreeHeap()));
   }
   #endif
   
   handleWebserver();
   #if logHeap > 0
   if (printHeap){
-    Serial.println("------------------------ after WebServer handle " + String(ESP.getHeapSize()-ESP.getHeapSize()));
+    Serial.println("------------------------ after WebServer handle " + String(ESP.getHeapSize()-ESP.getFreeHeap()));
   }
   #endif
 

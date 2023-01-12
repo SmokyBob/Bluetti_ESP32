@@ -81,7 +81,7 @@ void root_HTML() {
   data = data + "<tr><td>WiFiRSSI:</td><td>" + (String)WiFi.RSSI() + "</td>"+
                 "<td><b><a href='http://"+WiFi.localIP().toString()+"/config'>Change Configuration</a></b></td></tr>";
   data = data + "<tr><td>MAC:</td><td>" + WiFi.macAddress() + "</td></tr>";
-  data = data + "<tr><td>uptime :</td><td>" + convertMilliSecondsToHHMMSS(millis()) + "</td></tr>";
+  data = data + "<tr><td>uptime :</td><td>" + convertMilliSecondsToHHMMSS(millis()) + "</td><td>Running since: "+runningSince+"</td></tr>";
   data = data + "<tr><td>uptime (d):</td><td>" + millis() / 3600000/24 + "</td></tr>";
   data = data + "<tr><td>Bluetti device id:</td><td>" + wifiConfig.bluetti_device_id+ "</td></tr>";
   data = data + "<tr><td>BT connected:</td><td><input type='checkbox' " + ((isBTconnected())?"checked":"") + " onclick='return false;' /></td>"+
@@ -300,6 +300,8 @@ void initBWifi(bool resetWifi){
     Serial.println("IP address: ");
     Serial.println(WiFi.softAPIP());
   }
+
+  
   
   //WebServerConfig
   server.on("/",HTTP_GET,root_HTML);
@@ -345,5 +347,22 @@ void initBWifi(bool resetWifi){
 }
 
 void handleWebserver() {
+  if (runningSince.length()==0){
+    struct tm timeinfo;
+    if(!getLocalTime(&timeinfo)){
+      Serial.println("Failed to obtain time");
+    }else{
+      //Save start time as string in the preferred format
+      //Full param list
+      //https://cplusplus.com/reference/ctime/strftime/
+      char buffer [80];
+      strftime(buffer,80,"%F %T",&timeinfo);//ISO
+
+      runningSince = String(buffer);
+    }
+
+  }
   server.handleClient();
 }
+
+String runningSince;
