@@ -85,7 +85,7 @@ void root_HTML() {
   data = data + "<tr><td>uptime (d):</td><td>" + millis() / 3600000/24 + "</td></tr>";
   data = data + "<tr><td>Bluetti device id:</td><td>" + wifiConfig.bluetti_device_id+ "</td></tr>";
   data = data + "<tr><td>BT connected:</td><td><input type='checkbox' " + ((isBTconnected())?"checked":"") + " onclick='return false;' /></td>"+
-                ((!isBTconnected())?"":"<td><input type='button' onclick='location.href=""./btDisconnect""' value='Disconnect from BT'/></td>")+"</tr>";
+                ((!isBTconnected())?"":"<td><input type='button' onclick='location.href=\"./btDisconnect\"' value='Disconnect from BT'/></td>")+"</tr>";
   data = data + "<tr><td>BT last message time:</td><td>" + convertMilliSecondsToHHMMSS(getLastBTMessageTime()) + "</td></tr>";
   data = data + "<tr><td colspan='3'><hr></td></tr>";
   if (isBTconnected()){
@@ -249,7 +249,8 @@ void config_POST(){
 
 void disableBT_HTML(){
   disconnectBT();
-  root_HTML();
+  server.send(200, "text/html",
+            "<html><body onload='location.href=\"http://"+WiFi.localIP().toString()+"/\"';></body></html>");
 
 }
 

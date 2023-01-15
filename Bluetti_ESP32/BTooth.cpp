@@ -54,10 +54,11 @@ class BluettiAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
       Serial.println(F("device found stop scan."));
       BLEDevice::getScan()->stop();
       pBLEScan->clearResults();   // delete results fromBLEScan buffer to release memory
+      
       Serial.println(F("set variables for next loop to connect."));
       bluettiDevice = new BLEAdvertisedDevice(advertisedDevice);
       doConnect = true;
-      doScan = true;
+      doScan = true; //Rescan if connection is close abnormally
     }else{
       Serial.println(F("device id not matched, no connect "));
     }
@@ -199,6 +200,7 @@ void disconnectBT(){
   //Mainly for testing
   pClient->disconnect(); 
   connected = false; //to be sure
+  doScan=false;
 }
 
 void handleBTCommandQueue(){
@@ -240,9 +242,12 @@ void handleBluetooth(){
       doConnect = false;
     }
 
-    if ((millis() - lastBTMessage) > (MAX_DISCONNECTED_TIME_UNTIL_REBOOT * 60000)){ 
-      Serial.println(F("BT is disconnected over allowed limit, reboot device"));
-      ESP.restart();
+    //Check only if the client is not pourposely disconnected
+    if (doScan || connected){
+      if ((millis() - lastBTMessage) > (MAX_DISCONNECTED_TIME_UNTIL_REBOOT * 60000)){ 
+        Serial.println(F("BT is disconnected over allowed limit, reboot device"));
+        ESP.restart();
+      }
     }
 
     if (connected) {
