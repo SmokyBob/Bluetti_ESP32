@@ -224,8 +224,7 @@ void handleBTCommandQueue(){
 }
 
 void sendBTCommand(bt_command_t command){
-    bt_command_t cmd = command;
-    xQueueSend(sendQueue, &cmd, 500);
+    xQueueSend(sendQueue, &command, 500);
 }
 
 void handleBluetooth(){

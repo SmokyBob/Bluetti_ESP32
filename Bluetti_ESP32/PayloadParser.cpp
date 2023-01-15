@@ -41,8 +41,75 @@ String parse_string_field(uint8_t data[]){
     return String((char*) data);
 }
 
-String parse_enum_field(uint8_t data[]){
-    return "";
+String parse_enum_field(uint8_t data[],int8_t f_enum){
+  String toRet = "";
+  switch (f_enum)
+  {
+  case 1: //led_mode_enum
+    switch (parse_uint_field(data))
+    {
+    case LED_LOW:
+      toRet="LED_LOW";
+      break;
+    case LED_HIGH:
+      toRet="LED_HIGH";
+      break;
+    case LED_SOS:
+      toRet="LED_SOS";
+      break;
+    case LED_OFF:
+      toRet="LED_OFF";
+      break;
+    
+    default:
+      break;
+    }
+    break;
+  
+  case 2: //eco_shutdown_enum
+    switch (parse_uint_field(data))
+    {
+    case SHUTDOWN_ONE_HOUR:
+      toRet="SHUTDOWN_ONE_HOUR";
+      break;
+    case SHUTDOWN_TWO_HOURS:
+      toRet="SHUTDOWN_TWO_HOURS";
+      break;
+    case SHUTDOWN_THREE_HOURS:
+      toRet="SHUTDOWN_THREE_HOURS";
+      break;
+    case SHUTDOWN_FOUR_HOURS:
+      toRet="SHUTDOWN_FOUR_HOURS";
+      break;
+    
+    default:
+      break;
+    }
+    break;
+
+  case 3: //charging_mode_enum
+    switch (parse_uint_field(data))
+    {
+    case STANDARD_CHARGING:
+      toRet="STANDARD_CHARGING";
+      break;
+    case SILENT_CHARGING:
+      toRet="SILENT_CHARGING";
+      break;
+    case TURBO_CHARGING:
+      toRet="TURBO_CHARGING";
+      break;
+    
+    default:
+      break;
+    }
+    break;
+  
+  default:
+    break;
+  }
+  
+  return toRet;
 }
 
 uint16_t curr_TOTAL_BATTERY_PERCENT = 0;
@@ -78,7 +145,6 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t* pData, size_t l
                       p_index++;
                 }
                 
-                
                 switch (return_data[i].f_type){
                  
                   case UINT_FIELD:
@@ -109,7 +175,7 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t* pData, size_t l
                     break;
 
                   case ENUM_FIELD:
-                    return_data[i].f_value=parse_enum_field(data_payload_field);
+                    return_data[i].f_value=parse_enum_field(data_payload_field,return_data[i].f_enum);
                     break;
                   default:
                     break;
