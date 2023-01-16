@@ -69,6 +69,12 @@ void loop() {
     serialTick = millis();
   }
 
+  #ifdef FORCED_REBOOT_HRS
+  if ((millis()-serialTick)>(FORCED_REBOOT_HRS*60*60*1000)){
+    ESP.restart();
+  }
+  #endif
+
   delay(50);//Delay to give time to other internal tasks to run
   
 }

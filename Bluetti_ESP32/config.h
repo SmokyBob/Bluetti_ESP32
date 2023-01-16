@@ -34,4 +34,7 @@ static String ntpServer = "pool.ntp.org";
 static long  gmtOffset_sec = 3600*(+1);
 static int   daylightOffset_sec = 3600;
 
+//If defined, the device will be forcefully rebooted every X hours
+#define FORCED_REBOOT_HRS 12
+
 #endif
