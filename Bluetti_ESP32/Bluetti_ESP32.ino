@@ -70,7 +70,7 @@ void loop() {
   }
 
   #ifdef FORCED_REBOOT_HRS
-  if ((millis()-serialTick)>(FORCED_REBOOT_HRS*60*60*1000)){
+  if (millis()>(FORCED_REBOOT_HRS*60*60*1000)){
     ESP.restart();
   }
   #endif

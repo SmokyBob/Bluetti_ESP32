@@ -37,4 +37,32 @@ static int   daylightOffset_sec = 3600;
 //If defined, the device will be forcefully rebooted every X hours
 #define FORCED_REBOOT_HRS 12
 
+//N.B. if changed, update the function config_HTML to edit the fields
+typedef struct{
+  int  salt = EEPROM_SALT;
+  char bluetti_device_id[40] = "";
+  bool APMode = false;//Start in AP Mode
+  //IFTT Parameters
+  bool useIFTT = false; //Following parameters used (and shown) only if this is true
+  String IFTT_Key = ""; //https://ifttt.com/maker_webhooks then click Documentation
+  String IFTT_Event_low = ""; //If "" no event triggered
+  int IFTT_low_batteryLevel = 0;
+  String IFTT_Event_high = ""; //If "" no event triggered
+  int IFTT_high_batteryLevel = 0;
+
+  // bool use_Meross = false;
+  // //TODO: add meross parameters
+  // bool use_Relay = false;
+  // //TODO: add Relay GPIO.. when tested
+
+} ESPBluettiSettings;
+
+extern ESPBluettiSettings wifiConfig;
+
+extern ESPBluettiSettings get_esp32_bluetti_settings();
+
+extern void readConfigs();
+
+extern void saveConfig();
+
 #endif
