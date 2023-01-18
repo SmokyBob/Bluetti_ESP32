@@ -20,7 +20,7 @@ BLEScan* pBLEScan;
 
 unsigned long lastBTMessage = 0;
 
-ESPBluettiSettings settings = get_esp32_bluetti_settings();
+ESPBluettiSettings settings = wifiConfig;
 
 class MyClientCallback : public BLEClientCallbacks {
   void onConnect(BLEClient* pclient) {
@@ -50,7 +50,7 @@ class BluettiAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
     Serial.println(advertisedDevice.toString().c_str());
 
     // We have found a device, let us now see if it contains the service we are looking for.
-    if (advertisedDevice.haveServiceUUID() && advertisedDevice.isAdvertisingService(serviceUUID) && advertisedDevice.getName().compare(settings.bluetti_device_id)) {
+    if (advertisedDevice.haveServiceUUID() && advertisedDevice.isAdvertisingService(serviceUUID) && advertisedDevice.getName().compare(settings.bluetti_device_id.c_str())) {
       Serial.println(F("device found stop scan."));
       BLEDevice::getScan()->stop();
       pBLEScan->clearResults();   // delete results fromBLEScan buffer to release memory
@@ -66,13 +66,13 @@ class BluettiAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
 };
 
 void initBluetooth(){
-  settings = get_esp32_bluetti_settings();
+  settings = wifiConfig;
   #if DEBUG <=5
-  Serial.print("strlen(settings.bluetti_device_id) = ");
-  Serial.println(strlen(settings.bluetti_device_id));
+  Serial.print("settings.bluetti_device_id.length() = ");
+  Serial.println(settings.bluetti_device_id.length().toString());
   #endif
 
-  if (strlen(settings.bluetti_device_id)!=0){
+  if (settings.bluetti_device_id.length()>0){
 
     BLEDevice::init("");
     pBLEScan = BLEDevice::getScan();
@@ -230,7 +230,7 @@ void sendBTCommand(bt_command_t command){
 void handleBluetooth(){
   
   //Check BT only if an Id is available
-  if (strlen(settings.bluetti_device_id)!=0){
+  if (settings.bluetti_device_id.length()>0){
     if (doConnect == true) {
       Serial.println(F("Trying to connect Bluetti BLE Server."));
       if (connectToServer()) {

@@ -239,9 +239,6 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
         }
       }
 
-      //TEMP while fixing save
-      wifiConfig.IFTT_high_bl = 75;
-
       if (wifiConfig.IFTT_high_bl != 0)
       {
         // Battery Charged (and charging)

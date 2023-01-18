@@ -229,9 +229,9 @@ void config_POST()
   char tmp[40];
   strcpy(tmp, server.arg("bluetti_device_id").c_str());
 
-  if (strcmp(tmp, wifiConfig.bluetti_device_id) != 0)
+  if (strcmp(tmp, wifiConfig.bluetti_device_id.c_str()) != 0)
   {
-    strcpy(wifiConfig.bluetti_device_id, tmp);
+    wifiConfig.bluetti_device_id = server.arg("bluetti_device_id");
     resetRequired = true;
   }
 
@@ -256,11 +256,11 @@ void config_POST()
   if (server.hasArg("useIFTT"))
   {
     wifiConfig.useIFTT = true;
-    strcpy(wifiConfig.IFTT_Key, server.arg("IFTT_Key").c_str());
-    strcpy(wifiConfig.IFTT_Event_low, server.arg("IFTT_Event_low").c_str());
+    wifiConfig.IFTT_Key = server.arg("IFTT_Key");
+    wifiConfig.IFTT_Event_low = server.arg("IFTT_Event_low");
     wifiConfig.IFTT_low_bl = server.arg("IFTT_low_bl").toInt();
-    strcpy(wifiConfig.IFTT_Event_high, server.arg("IFTT_Event_high").c_str());
-    wifiConfig.IFTT_high_bl, server.arg("IFTT_high_bl").toInt();
+    wifiConfig.IFTT_Event_high = server.arg("IFTT_Event_high");
+    wifiConfig.IFTT_high_bl = server.arg("IFTT_high_bl").toInt();
     // Serial.println(wifiConfig.IFTT_high_bl);
     // Serial.println("-------------");
     // Serial.println(server.arg("IFTT_high_bl"));

@@ -23,8 +23,8 @@ void makeIFTTTRequest(String event)
   long curr_millis;
 
   // handle requests only if parameters are set
-  if (strlen(wifiConfig.IFTT_Key) > 0 &&
-      (strlen(wifiConfig.IFTT_Event_low) > 0 || strlen(wifiConfig.IFTT_Event_high) > 0))
+  if (wifiConfig.IFTT_Key.length() > 0 &&
+      (wifiConfig.IFTT_Event_low.length() > 0 || wifiConfig.IFTT_Event_high.length() > 0))
   {
 
     if (event == "low")
@@ -66,7 +66,7 @@ void makeIFTTTRequest(String event)
         
         if (event == "low")
         {
-          if (strlen(wifiConfig.IFTT_Event_low) > 0)
+          if (wifiConfig.IFTT_Event_low.length() > 0)
           {
             currAddr.replace("{event}", wifiConfig.IFTT_Event_low);
           }
@@ -77,7 +77,7 @@ void makeIFTTTRequest(String event)
         }
         else
         {
-          if (strlen(wifiConfig.IFTT_Event_high) > 0)
+          if (wifiConfig.IFTT_Event_high.length() > 0)
           {
             currAddr.replace("{event}", wifiConfig.IFTT_Event_high);
           }
