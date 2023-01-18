@@ -14,9 +14,6 @@ void setup() {
     digitalWrite(RELAIS_PIN, RELAIS_LOW);
   #endif
 
-  esp_task_wdt_init(WDT_TIMEOUT, true); //enable panic so ESP32 restarts
-  esp_task_wdt_add(NULL); //add current thread to WDT watch
-
   //Init time
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer.c_str());
 
@@ -25,6 +22,9 @@ void setup() {
 
   initBWifi(false);//Init Wifi and WebServer
   initBluetooth();
+
+  esp_task_wdt_init(WDT_TIMEOUT, true); //enable panic so ESP32 restarts
+  esp_task_wdt_add(NULL); //add current thread to WDT watch
 }
 
 #if logHeap > 0

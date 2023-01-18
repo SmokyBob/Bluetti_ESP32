@@ -196,16 +196,17 @@ void config_HTML(bool paramsSaved = false, bool resetRequired = false)
   data = data + "<tr><td>Use IFTT:</td>" +
          "<td><input type='checkbox' name='useIFTT' value='useIFTTBool' " + ((wifiConfig.useIFTT) ? "checked" : "") + +" /></td></tr>";
   data = data + "<tr class'showIFTT'><td>IFTT Key:</td>" +
-         "<td><input type='text' size=40 name='IFTT_Key' value='" + wifiConfig.IFTT_Key + "' /></td></tr>";
+         "<td><input type='text' size=25 name='IFTT_Key' value='" + wifiConfig.IFTT_Key + "' /></td></tr>";
   data = data + "<tr class'showIFTT'><td>IFTT Event - Low Battery (empty to not trigger the event):</td>" +
-         "<td><input type='text' size=40 name='IFTT_Event_low' value='" + wifiConfig.IFTT_Event_low + "' /></td></tr>";
+         "<td><input type='text' size=25 name='IFTT_Event_low' value='" + wifiConfig.IFTT_Event_low + "' /></td></tr>";
   data = data + "<tr class'showIFTT'><td>IFTT Low Battery percentage:</td>" +
-         "<td><input type='number' placeholder='1.0' step='1' min='1' max='100' name='IFTT_low_batteryLevel' value='" + wifiConfig.IFTT_low_batteryLevel + "' /></td></tr>";
+         "<td><input type='number' placeholder='1.0' step='1' min='1' max='100' name='IFTT_low_bl' value='" + wifiConfig.IFTT_low_bl + "' /></td></tr>";
 
   data = data + "<tr class'showIFTT'><td>IFTT Event - High Battery (empty to not trigger the event):</td>" +
-         "<td><input type='text' size=40 name='IFTT_Event_high' value='" + wifiConfig.IFTT_Event_high + "' /></td></tr>";
+         "<td><input type='text' size=25 name='IFTT_Event_high' value='" + wifiConfig.IFTT_Event_high + "' /></td></tr>";
   data = data + "<tr class'showIFTT'><td>IFTT high Battery percentage:</td>" +
-         "<td><input type='number' placeholder='1.0' step='1' min='1' max='100' name='IFTT_high_batteryLevel' value='" + wifiConfig.IFTT_high_batteryLevel + "' /></td></tr>";
+         "<td><input type='number' placeholder='1.0' step='1' min='1' max='100' name='IFTT_high_bl' value='" + wifiConfig.IFTT_high_bl + "' /></td></tr>";
+  // Serial.println(wifiConfig.IFTT_high_bl);
 
   // TODO: add other parameters accordingly
   data = data + "</table>" +
@@ -255,11 +256,14 @@ void config_POST()
   if (server.hasArg("useIFTT"))
   {
     wifiConfig.useIFTT = true;
-    wifiConfig.IFTT_Key = server.arg("IFTT_Key");
-    wifiConfig.IFTT_Event_low = server.arg("IFTT_Event_low");
-    wifiConfig.IFTT_low_batteryLevel = server.arg("IFTT_low_batteryLevel").toInt();
-    wifiConfig.IFTT_Event_high = server.arg("IFTT_Event_high");
-    wifiConfig.IFTT_high_batteryLevel = server.arg("IFTT_high_batteryLevel").toInt();
+    strcpy(wifiConfig.IFTT_Key, server.arg("IFTT_Key").c_str());
+    strcpy(wifiConfig.IFTT_Event_low, server.arg("IFTT_Event_low").c_str());
+    wifiConfig.IFTT_low_bl = server.arg("IFTT_low_bl").toInt();
+    strcpy(wifiConfig.IFTT_Event_high, server.arg("IFTT_Event_high").c_str());
+    wifiConfig.IFTT_high_bl, server.arg("IFTT_high_bl").toInt();
+    // Serial.println(wifiConfig.IFTT_high_bl);
+    // Serial.println("-------------");
+    // Serial.println(server.arg("IFTT_high_bl"));
   }
   else
   {

@@ -230,19 +230,22 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
 #endif
       }
 
-      if (wifiConfig.IFTT_low_batteryLevel != 0)
+      if (wifiConfig.IFTT_low_bl != 0)
       {
         // Low Battery Notification (not charging)
-        if (curr_TOTAL_BATTERY_PERCENT <= wifiConfig.IFTT_low_batteryLevel && curr_AC_INPUT_POWER <= 1)
+        if (curr_TOTAL_BATTERY_PERCENT <= wifiConfig.IFTT_low_bl && curr_AC_INPUT_POWER <= 1)
         {
           makeIFTTTRequest("low");
         }
       }
 
-      if (wifiConfig.IFTT_high_batteryLevel != 0)
+      //TEMP while fixing save
+      wifiConfig.IFTT_high_bl = 75;
+
+      if (wifiConfig.IFTT_high_bl != 0)
       {
         // Battery Charged (and charging)
-        if (curr_TOTAL_BATTERY_PERCENT >= wifiConfig.IFTT_high_batteryLevel && curr_AC_INPUT_POWER > 0)
+        if (curr_TOTAL_BATTERY_PERCENT >= wifiConfig.IFTT_high_bl && curr_AC_INPUT_POWER > 0)
         {
           makeIFTTTRequest("high");
         }
