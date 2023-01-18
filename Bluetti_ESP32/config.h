@@ -38,18 +38,19 @@ static int daylightOffset_sec = 3600;
 #define FORCED_REBOOT_HRS 12
 
 // N.B. if changed, update the function config_HTML to edit the fields
+// readConfigs and saveConfig needs to be updated too
 typedef struct
 {
   int salt = EEPROM_SALT;
-  char bluetti_device_id[40] = "";
+  String bluetti_device_id = "";
   bool APMode = false; // Start in AP Mode
   // IFTT Parameters
-  bool useIFTT = false;         // Following parameters used (and shown) only if this is true
-  char IFTT_Key[25] = "";       // https://ifttt.com/maker_webhooks then click Documentation
-  char IFTT_Event_low[25] = ""; // If "" no event triggered
-  int IFTT_low_bl = 0;
-  char IFTT_Event_high[25] = ""; // If "" no event triggered
-  int IFTT_high_bl = 0;
+  bool useIFTT = false;       // Following parameters used (and shown) only if this is true
+  String IFTT_Key = "";       // https://ifttt.com/maker_webhooks then click Documentation
+  String IFTT_Event_low = ""; // If "" no event triggered
+  uint8_t IFTT_low_bl = 0;
+  String IFTT_Event_high = ""; // If "" no event triggered
+  uint8_t IFTT_high_bl = 0;
 
   // bool use_Meross = false;
   // //TODO: add meross parameters
@@ -59,8 +60,6 @@ typedef struct
 } ESPBluettiSettings;
 
 extern ESPBluettiSettings wifiConfig;
-
-extern ESPBluettiSettings get_esp32_bluetti_settings();
 
 extern void readConfigs();
 
