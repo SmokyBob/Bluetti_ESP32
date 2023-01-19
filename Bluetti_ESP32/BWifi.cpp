@@ -55,15 +55,18 @@ void root_HTML()
   data = data + "<BODY>";
   data = data + "<table border='0'>";
   data = data + "<tr><td>host:</td><td>" + WiFi.localIP().toString() + "</td>" +
-         "<td><a href='./rebootDevice' target='_blank'>reboot this device</a></td></tr>";
+         "<td><a href='./rebootDevice'>Reboot this device</a></td></tr>";
   data = data + "<tr><td>SSID:</td><td>" + WiFi.SSID() + "</td>" +
-         "<td><a href='./resetWifiConfig' target='_blank'>reset WIFI config</a></td></tr>";
+         "<td><a href='./resetWifiConfig'>Reset WIFI config</a></td></tr>";
   data = data + "<tr><td>WiFiRSSI:</td><td>" + (String)WiFi.RSSI() + "</td>" +
          "<td><b><a href='./config'>Change Configuration</a></b></td></tr>";
   data = data + "<tr><td>MAC:</td><td>" + WiFi.macAddress() + "</td></tr>";
-  data = data + "<tr><td>uptime :</td><td>" + convertMilliSecondsToHHMMSS(millis()) + "</td><td>Running since: " + runningSince + "</td></tr>";
-  data = data + "<tr><td>uptime (d):</td><td>" + millis() / 3600000 / 24 + "</td></tr>";
-  data = data + "<tr><td>Bluetti device id:</td><td>" + wifiConfig.bluetti_device_id + "</td></tr>";
+  data = data + "<tr><td>uptime :</td><td>" + convertMilliSecondsToHHMMSS(millis()) + "</td>" +
+         "<td>Running since: " + runningSince + "</td></tr>";
+  data = data + "<tr><td>uptime (d):</td><td>" + millis() / 3600000 / 24 + "</td>" +
+         "<td><b><a href='./debugLog' target='_blank'>Debug Log</a></b></td></tr>";
+  data = data + "<tr><td>Bluetti device id:</td><td>" + wifiConfig.bluetti_device_id + "</td>" +
+         "<td><b><a href='./dataLog' target='_blank'>Bluetti data Log</a></b></td></tr>";
   data = data + "<tr><td>BT connected:</td><td><input type='checkbox' " + ((isBTconnected()) ? "checked" : "") + " onclick='return false;' /></td>" +
          ((!isBTconnected()) ? "" : "<td><input type='button' onclick='location.href=\"./btDisconnect\"' value='Disconnect from BT'/></td>") + "</tr>";
   data = data + "<tr><td>BT last message time:</td><td>" + convertMilliSecondsToHHMMSS(getLastBTMessageTime()) + "</td></tr>";
@@ -286,6 +289,63 @@ void disableBT_HTML()
               "<html><body onload='location.href=\"./\"';></body></html>");
 }
 
+void showDebugLog_HTML()
+{
+  server.send(200, "text/plain", getLog());
+}
+
+void showDataLog_HTML()
+{
+  // TODO: save bluetti data TO FILE when received THAN show them here :)
+}
+
+void setWebHandles()
+{
+  // WebServerConfig
+  server.on("/", HTTP_GET, root_HTML);
+
+  server.on("/rebootDevice", HTTP_GET, []()
+            {
+    server.send(200, "text/plain", "reboot in 2sec");
+    disconnectBT();//Gracefully disconnect from BT
+    delay(2000);
+    ESP.restart(); });
+
+  server.on("/resetWifiConfig", HTTP_GET, []()
+            {
+    server.send(200, "text/plain", "reset Wifi and reboot in 2sec");
+    delay(2000);
+    initBWifi(true); });
+
+  server.on("/resetConfig", HTTP_GET, []()
+            {
+    server.send(200, "text/plain", "reset FULL CONFIG and reboot in 2sec");
+    resetConfig();
+    delay(2000);
+    ESP.restart(); });
+
+  // Commands come in with a form to the /post endpoint
+  server.on("/post", HTTP_POST, command_HTML);
+  // ONLY FOR TESTING
+  // server.on("/get", HTTP_GET, command_HTML);
+
+  // endpoints to update the config WITHOUT reset
+  server.on("/config", HTTP_GET, []()
+            { config_HTML(false); });
+  server.on("/config", HTTP_POST, config_POST);
+
+  // BTDisconnect //TODO: post only with JS... when the html code is in a separate file
+  server.on("/btDisconnect", HTTP_GET, disableBT_HTML);
+
+  server.on("/debugLog", HTTP_GET, showDebugLog_HTML);
+
+  server.on("/dataLog", HTTP_GET, showDataLog_HTML);
+
+  server.onNotFound(notFound);
+
+  server.begin();
+}
+
 #pragma endregion Async Ws handlers
 
 void initBWifi(bool resetWifi)
@@ -314,13 +374,14 @@ void initBWifi(bool resetWifi)
   if (!wifiConfig.APMode)
   {
     unsigned long preConfigMillis = millis();
-    wifiManager.setConfigPortalTimeout(180); //180 sec timeout so that after power failure or restart it doesn't hang in portal mode
+    wifiManager.setConfigPortalTimeout(180); // 180 sec timeout so that after power failure or restart it doesn't hang in portal mode
 
     // Use configurations to connect to Wifi Network
     bool result = wifiManager.autoConnect(DEVICE_NAME);
 
-    if (result == false){
-      //Restart and try again to connect to the wifi
+    if (result == false)
+    {
+      // Restart and try again to connect to the wifi
       ESP.restart();
     }
     // Wait for connection
@@ -347,43 +408,10 @@ void initBWifi(bool resetWifi)
     Serial.println(WiFi.softAPIP());
   }
 
-  // WebServerConfig
-  server.on("/", HTTP_GET, root_HTML);
-  server.on("/rebootDevice", HTTP_GET, []()
-            {
-    server.send(200, "text/plain", "reboot in 2sec");
-    disconnectBT();//Gracefully disconnect from BT
-    delay(2000);
-    ESP.restart(); });
-  server.on("/resetWifiConfig", HTTP_GET, []()
-            {
-    server.send(200, "text/plain", "reset Wifi and reboot in 2sec");
-    delay(2000);
-    initBWifi(true); });
-  server.on("/resetConfig", HTTP_GET, []()
-            {
-    server.send(200, "text/plain", "reset FULL CONFIG and reboot in 2sec");
-    resetConfig();
-    delay(2000);
-    ESP.restart(); });
+  setWebHandles();
 
-  // Commands come in with a form to the /post endpoint
-  server.on("/post", HTTP_POST, command_HTML);
-  // ONLY FOR TESTING
-  server.on("/get", HTTP_GET, command_HTML);
-
-  // endpoints to update the config WITHOUT reset
-  server.on("/config", HTTP_GET, []()
-            { config_HTML(false); });
-  server.on("/config", HTTP_POST, config_POST);
-
-  // BTDisconnect //TODO: post only with JS... when the html code is in a separate file
-  server.on("/btDisconnect", HTTP_GET, disableBT_HTML);
-
-  server.onNotFound(notFound);
-
-  server.begin();
   Serial.println("HTTP server started");
+  writeLog("HTTP server started");
   Serial.print("Bluetti Device id to search for: ");
   Serial.println(wifiConfig.bluetti_device_id);
   // Init Array
@@ -395,7 +423,7 @@ void handleWebserver()
   if (runningSince.length() == 0)
   {
     struct tm timeinfo;
-    if (!getLocalTime(&timeinfo))
+    if (!getLocalTime(&timeinfo, 15 * 1000))
     {
       Serial.println("Failed to obtain time");
     }

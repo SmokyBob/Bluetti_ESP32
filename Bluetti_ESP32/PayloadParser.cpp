@@ -220,7 +220,7 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
       Serial.println("TOTAL_BATTERY_PERCENT: " + return_data[TOTAL_BATTERY_PERCENT].f_value);
       Serial.println("AC_INPUT_POWER: " + return_data[AC_INPUT_POWER].f_value);
 #endif
-
+      writeLog("Bluetti data received");
       // Queue used to exchange data with the WebServer, but data is fetched only when the page is reloaded
       xQueueReset(bluetti_data_queue); // free up the queue
       if (xQueueSend(bluetti_data_queue, &return_data, 1000) == pdTRUE)
@@ -228,6 +228,17 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
 #if DEBUG <= 5
         Serial.println("bluetti_data saved in queue ");
 #endif
+        String jsonString; //N.B. in this case is faster and simpler than using ArduinoJSON
+        jsonString = "{";//TODO: add timestamp field
+        for (int i = 0; i < sizeof(return_data) / sizeof(device_field_data_t); i++)
+        {
+          jsonString = jsonString + "\"" + map_field_name(return_data[i].f_name).c_str() + "\": " +
+                       " \"" + return_data[i].f_value + "\",";
+        }
+        jsonString = jsonString + "}";
+
+        //TODO: checked that the data logged are there, must implement the right file save
+        //writeLog(jsonString);
       }
 
       if (wifiConfig.IFTT_low_bl != 0)

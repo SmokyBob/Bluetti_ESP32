@@ -58,3 +58,16 @@ String getLog()
 
   return toRet;
 }
+
+void writeLog(String message)
+{
+  // Get Time to write before the log
+  // Full param list
+  // https://cplusplus.com/reference/ctime/strftime/
+
+  char buffer[80];
+  time_t tt = time(0);
+  strftime(buffer, 80, "%F %T", localtime(&tt));
+
+  esp_log_write(ESP_LOG_DEBUG, "DBG", (String(buffer) + " " + message + "\n").c_str());
+}

@@ -21,11 +21,13 @@ void setup()
   // initialize the queue used to share device state between processes
   bluetti_data_queue = xQueueCreate(1, sizeof(bluetti_device_state));
 
-  initBWifi(false); // Init Wifi and WebServer
-  initBluetooth();
-
   // TODO: Config parametere to enable this feature?
   initLog(); // Init debug log to file
+  writeLog("---------------------------");
+  writeLog("Starting");
+
+  initBWifi(false); // Init Wifi and WebServer
+  initBluetooth();
 
   esp_task_wdt_init(WDT_TIMEOUT, true); // enable panic so ESP32 restarts
   esp_task_wdt_add(NULL);               // add current thread to WDT watch
@@ -77,8 +79,7 @@ void loop()
   if ((millis() - serialTick) > (5 * 1000))
   {
     esp_task_wdt_reset(); // Reset WDT every 5 secs in
-    Serial.println("Loop Running");
-    ESP_LOGD("DBG","Loop Running");//FIXME: Rimuovere dopo test iniziali di funzionamento
+
     serialTick = millis();
   }
 
