@@ -1,6 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 #include "Arduino.h"
+#include "logger.h"
 
 // Info = 5
 // Log = 4
@@ -35,7 +36,7 @@ static long gmtOffset_sec = 3600 * (+1);
 static int daylightOffset_sec = 3600;
 
 // If defined, the device will be forcefully rebooted every X hours
-#define FORCED_REBOOT_HRS 12
+// #define FORCED_REBOOT_HRS 12
 
 // N.B. if changed, update the function config_HTML to edit the fields
 // readConfigs and saveConfig needs to be updated too

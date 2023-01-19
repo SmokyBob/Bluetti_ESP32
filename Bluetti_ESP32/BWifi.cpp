@@ -311,12 +311,18 @@ void initBWifi(bool resetWifi)
     saveConfig();
   }
 
-  // wifiManager.setSaveConfigCallback(saveConfigCallback);
-
   if (!wifiConfig.APMode)
   {
+    unsigned long preConfigMillis = millis();
+    wifiManager.setConfigPortalTimeout(180); //180 sec timeout so that after power failure or restart it doesn't hang in portal mode
+
     // Use configurations to connect to Wifi Network
-    wifiManager.autoConnect(DEVICE_NAME);
+    bool result = wifiManager.autoConnect(DEVICE_NAME);
+
+    if (result == false){
+      //Restart and try again to connect to the wifi
+      ESP.restart();
+    }
     // Wait for connection
     while (WiFi.status() != WL_CONNECTED)
     {
