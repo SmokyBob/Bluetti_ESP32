@@ -55,11 +55,11 @@ void root_HTML()
   data = data + "<BODY>";
   data = data + "<table border='0'>";
   data = data + "<tr><td>host:</td><td>" + WiFi.localIP().toString() + "</td>" +
-         "<td><a href='http://" + WiFi.localIP().toString() + "/rebootDevice' target='_blank'>reboot this device</a></td></tr>";
+         "<td><a href='./rebootDevice' target='_blank'>reboot this device</a></td></tr>";
   data = data + "<tr><td>SSID:</td><td>" + WiFi.SSID() + "</td>" +
-         "<td><a href='http://" + WiFi.localIP().toString() + "/resetWifiConfig' target='_blank'>reset WIFI config</a></td></tr>";
+         "<td><a href='./resetWifiConfig' target='_blank'>reset WIFI config</a></td></tr>";
   data = data + "<tr><td>WiFiRSSI:</td><td>" + (String)WiFi.RSSI() + "</td>" +
-         "<td><b><a href='http://" + WiFi.localIP().toString() + "/config'>Change Configuration</a></b></td></tr>";
+         "<td><b><a href='./config'>Change Configuration</a></b></td></tr>";
   data = data + "<tr><td>MAC:</td><td>" + WiFi.macAddress() + "</td></tr>";
   data = data + "<tr><td>uptime :</td><td>" + convertMilliSecondsToHHMMSS(millis()) + "</td><td>Running since: " + runningSince + "</td></tr>";
   data = data + "<tr><td>uptime (d):</td><td>" + millis() / 3600000 / 24 + "</td></tr>";
@@ -183,12 +183,12 @@ void config_HTML(bool paramsSaved = false, bool resetRequired = false)
            ((resetRequired) ? "Restart required (will be done in 2 second)" : "") +
            "</span><br/><br/>";
   }
-  data = data + "<a href='http://" + WiFi.localIP().toString() + "/resetConfig' target='_blank' style='color:red'>reset FULL configuration</a>";
+  data = data + "<a href='./resetConfig' target='_blank' style='color:red'>reset FULL configuration</a>";
   data = data + "<form action='/config' method='POST'>";
   data = data + "<table border='0'>";
   data = data + "<tr><td>Bluetti device id:</td>" +
          "<td><input type='text' size=40 name='bluetti_device_id' value='" + wifiConfig.bluetti_device_id + "' /></td>" +
-         "<td><a href='http://" + WiFi.localIP().toString() + "/'>Home</a></td></tr>";
+         "<td><a href='./'>Home</a></td></tr>";
   data = data + "<tr><td>Start in AP Mode:</td>" +
          "<td><input type='checkbox' name='APMode' value='APModeBool' " + ((wifiConfig.APMode) ? "checked" : "") + +" /></td></tr>";
   // IFTT Parameters
@@ -200,12 +200,12 @@ void config_HTML(bool paramsSaved = false, bool resetRequired = false)
   data = data + "<tr class'showIFTT'><td>IFTT Event - Low Battery (empty to not trigger the event):</td>" +
          "<td><input type='text' size=25 name='IFTT_Event_low' value='" + wifiConfig.IFTT_Event_low + "' /></td></tr>";
   data = data + "<tr class'showIFTT'><td>IFTT Low Battery percentage:</td>" +
-         "<td><input type='number' placeholder='1.0' step='1' min='1' max='100' name='IFTT_low_bl' value='" + wifiConfig.IFTT_low_bl + "' /></td></tr>";
+         "<td><input type='number' placeholder='1.0' step='1' min='0' max='100' name='IFTT_low_bl' value='" + wifiConfig.IFTT_low_bl + "' /></td></tr>";
 
   data = data + "<tr class'showIFTT'><td>IFTT Event - High Battery (empty to not trigger the event):</td>" +
          "<td><input type='text' size=25 name='IFTT_Event_high' value='" + wifiConfig.IFTT_Event_high + "' /></td></tr>";
   data = data + "<tr class'showIFTT'><td>IFTT high Battery percentage:</td>" +
-         "<td><input type='number' placeholder='1.0' step='1' min='1' max='100' name='IFTT_high_bl' value='" + wifiConfig.IFTT_high_bl + "' /></td></tr>";
+         "<td><input type='number' placeholder='1.0' step='1' min='0' max='100' name='IFTT_high_bl' value='" + wifiConfig.IFTT_high_bl + "' /></td></tr>";
   // Serial.println(wifiConfig.IFTT_high_bl);
 
   // TODO: add other parameters accordingly
@@ -283,7 +283,7 @@ void disableBT_HTML()
 {
   disconnectBT();
   server.send(200, "text/html",
-              "<html><body onload='location.href=\"http://" + WiFi.localIP().toString() + "/\"';></body></html>");
+              "<html><body onload='location.href=\"./\"';></body></html>");
 }
 
 #pragma endregion Async Ws handlers
