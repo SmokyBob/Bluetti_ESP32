@@ -71,5 +71,5 @@ void saveBTData(String message){
 void clearBtData()
 {
   // Remove the log file so that a new one will be creates the next time a log is stored
-  SPIFFS.remove("/bluetti_data.txt");
+  SPIFFS.remove("/bluetti_data.json");
 }
