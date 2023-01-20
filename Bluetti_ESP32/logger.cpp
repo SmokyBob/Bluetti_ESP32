@@ -1,6 +1,7 @@
 #include "logger.h"
 
 static char log_print_buffer[512];
+static char log_bt_data[512];
 
 int vprintf_into_spiffs(const char *szFormat, va_list args)
 {
@@ -42,32 +43,33 @@ void clearLog()
   SPIFFS.remove("/debug_log.txt");
 }
 
-String getLog()
-{
-  File spiffsLogFile = SPIFFS.open("/debug_log.txt", FILE_READ);
-
-  if (!spiffsLogFile)
-  {
-    Serial.println("Failed to open file for reading");
-    return "Error Reading log File";
-  }
-
-  String toRet = spiffsLogFile.readString();
-
-  spiffsLogFile.close();
-
-  return toRet;
-}
-
 void writeLog(String message)
 {
-  // Get Time to write before the log
-  // Full param list
-  // https://cplusplus.com/reference/ctime/strftime/
+  esp_log_write(ESP_LOG_DEBUG, "DBG", (getLocalTimeISO() + " " + message + "\n").c_str());
+}
 
-  char buffer[80];
-  time_t tt = time(0);
-  strftime(buffer, 80, "%F %T", localtime(&tt));
+void saveBTData(String message){
+  message = message +"\n";//Add new line each file save 
+  va_list args;
+  // write evaluated format string into buffer
+  int ret = vsnprintf(log_bt_data, sizeof(log_bt_data), message.c_str(), args);
 
-  esp_log_write(ESP_LOG_DEBUG, "DBG", (String(buffer) + " " + message + "\n").c_str());
+  // output is now in buffer. write to file.
+  if (ret >= 0)
+  {
+    File spiffsBTDataFile = SPIFFS.open("/bluetti_data.json", FILE_APPEND);
+    // debug output
+    // printf("[Writing to SPIFFS] %.*s", ret, log_bt_data);
+    spiffsBTDataFile.write((uint8_t *)log_bt_data, (size_t)ret);
+    // to be safe in case of crashes: flush the output
+    spiffsBTDataFile.flush();
+    spiffsBTDataFile.close();
+  }
+
+}
+
+void clearBtData()
+{
+  // Remove the log file so that a new one will be creates the next time a log is stored
+  SPIFFS.remove("/bluetti_data.txt");
 }

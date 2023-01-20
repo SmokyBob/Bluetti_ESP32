@@ -291,12 +291,24 @@ void disableBT_HTML()
 
 void showDebugLog_HTML()
 {
-  server.send(200, "text/plain", getLog());
+  // File Download instead of show
+  File download = SPIFFS.open("/debug_log.txt", FILE_READ);
+  server.sendHeader("Content-Type", "text/text");
+  server.sendHeader("Content-Disposition", "attachment; filename=debug_log.txt");
+  server.sendHeader("Connection", "close");
+  server.streamFile(download, "application/octet-stream");
+  download.close();
 }
 
 void showDataLog_HTML()
 {
-  // TODO: save bluetti data TO FILE when received THAN show them here :)
+  // File Download instead of show
+  File download = SPIFFS.open("/bluetti_data.json", FILE_READ);
+  server.sendHeader("Content-Type", "text/text");//Return as text
+  server.sendHeader("Content-Disposition", "attachment; filename=bluetti_data.json");
+  server.sendHeader("Connection", "close");
+  server.streamFile(download, "application/octet-stream");
+  download.close();
 }
 
 void setWebHandles()
@@ -338,6 +350,16 @@ void setWebHandles()
   server.on("/btDisconnect", HTTP_GET, disableBT_HTML);
 
   server.on("/debugLog", HTTP_GET, showDebugLog_HTML);
+
+  server.on("/clearLog", HTTP_GET, []()
+            {
+              clearLog();
+              server.send(200, "text/plain", "Log Cleared"); });
+
+  server.on("/clearBtData", HTTP_GET, []()
+            {
+              clearBtData();
+              server.send(200, "text/plain", "BtData Cleared"); });
 
   server.on("/dataLog", HTTP_GET, showDataLog_HTML);
 

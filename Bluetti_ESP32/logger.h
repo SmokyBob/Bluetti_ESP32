@@ -3,6 +3,7 @@
 #include "Arduino.h"
 
 #include <SPIFFS.h>
+#include "utils.h"
 
 // Base on https://community.platformio.org/t/is-it-possible-to-output-logs-to-a-spiffs-file-thats-inside-the-esp32/6999/4
 // esp_logging docs
@@ -12,8 +13,10 @@ extern void initLog();
 
 extern void clearLog();
 
-extern String getLog();
-
 extern void writeLog(String message);
+
+extern void saveBTData(String message);
+
+extern void clearBtData();
 
 #endif

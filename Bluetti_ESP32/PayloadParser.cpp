@@ -229,16 +229,18 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
         Serial.println("bluetti_data saved in queue ");
 #endif
         String jsonString; //N.B. in this case is faster and simpler than using ArduinoJSON
-        jsonString = "{";//TODO: add timestamp field
+        jsonString = "{\"timestamp\":\"" + getLocalTimeISO()+"\",";
         for (int i = 0; i < sizeof(return_data) / sizeof(device_field_data_t); i++)
         {
           jsonString = jsonString + "\"" + map_field_name(return_data[i].f_name).c_str() + "\": " +
                        " \"" + return_data[i].f_value + "\",";
         }
+        //Remove last ","
+        jsonString = jsonString.substring(0, jsonString.length()-1);
         jsonString = jsonString + "}";
 
-        //TODO: checked that the data logged are there, must implement the right file save
-        //writeLog(jsonString);
+        //Save data to file for later use
+        saveBTData(jsonString);
       }
 
       if (wifiConfig.IFTT_low_bl != 0)

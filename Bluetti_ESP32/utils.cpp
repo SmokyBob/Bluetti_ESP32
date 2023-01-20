@@ -120,3 +120,15 @@ void copyArray(device_field_data_t* src, device_field_data_t* dst, int len) {
         *dst++ = *src++;
     }
 }
+
+String getLocalTimeISO(){
+  // Get Time to write before the log
+  // Full param list
+  // https://cplusplus.com/reference/ctime/strftime/
+
+  char buffer[80];
+  time_t tt = time(0);
+  strftime(buffer, 80, "%F %T", localtime(&tt));
+
+  return String(buffer);
+}
