@@ -3,6 +3,7 @@
 #include "config.h"
 #include "BluettiConfig.h"
 #include <esp_task_wdt.h>
+#include "WiFi.h"
 
 void setup()
 {
@@ -76,11 +77,29 @@ void loop()
   }
 #endif
 
-  if ((millis() - serialTick) > (5 * 1000))
+  if (WiFi.status() != WL_CONNECTED)
   {
-    esp_task_wdt_reset(); // Reset WDT every 5 secs in
+    Serial.println("Wifi Not connected! Reconnecting");
+    writeLog("Wifi Not connected! Reconnecting");
+    esp_task_wdt_delete(NULL); // Remove watchdog
+    delay(10000);//Wait 10 secs before trying again
+    wifiConnect(false);        // REinit Wifi
+  }
+  else
+  {
+    if ((millis() - serialTick) > (5 * 1000))
+    {
+      if (esp_task_wdt_status(NULL) == ESP_ERR_NOT_FOUND)
+      {
+        esp_task_wdt_add(NULL); // add current thread to WDT watch
+      }
+      else
+      {
+        esp_task_wdt_reset(); // Reset WDT every 5 secs in
+      }
 
-    serialTick = millis();
+      serialTick = millis();
+    }
   }
 
 #ifdef FORCED_REBOOT_HRS

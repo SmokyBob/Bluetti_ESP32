@@ -70,6 +70,7 @@ void root_HTML()
   data = data + "<tr><td>BT connected:</td><td><input type='checkbox' " + ((isBTconnected()) ? "checked" : "") + " onclick='return false;' /></td>" +
          ((!isBTconnected()) ? "" : "<td><input type='button' onclick='location.href=\"./btDisconnect\"' value='Disconnect from BT'/></td>") + "</tr>";
   data = data + "<tr><td>BT last message time:</td><td>" + convertMilliSecondsToHHMMSS(getLastBTMessageTime()) + "</td></tr>";
+  data = data + "<tr><td>Free Heap (Bytes):</td><td>" + String(ESP.getFreeHeap()) + "</td></tr>";
   data = data + "<tr><td colspan='3'><hr></td></tr>";
   if (isBTconnected())
   {
@@ -370,18 +371,7 @@ void setWebHandles()
 
 #pragma endregion Async Ws handlers
 
-void initBWifi(bool resetWifi)
-{
-
-  readConfigs();
-
-  if (wifiConfig.salt != EEPROM_SALT)
-  {
-    Serial.println("Invalid settings in EEPROM, trying with defaults");
-    ESPBluettiSettings defaults;
-    wifiConfig = defaults;
-  }
-
+void wifiConnect(bool resetWifi){
   WiFiManager wifiManager;
 
   if (resetWifi)
@@ -395,7 +385,6 @@ void initBWifi(bool resetWifi)
 
   if (!wifiConfig.APMode)
   {
-    unsigned long preConfigMillis = millis();
     wifiManager.setConfigPortalTimeout(180); // 180 sec timeout so that after power failure or restart it doesn't hang in portal mode
 
     // Use configurations to connect to Wifi Network
@@ -429,6 +418,21 @@ void initBWifi(bool resetWifi)
     Serial.println("IP address: ");
     Serial.println(WiFi.softAPIP());
   }
+}
+
+void initBWifi(bool resetWifi)
+{
+
+  readConfigs();
+
+  if (wifiConfig.salt != EEPROM_SALT)
+  {
+    Serial.println("Invalid settings in EEPROM, trying with defaults");
+    ESPBluettiSettings defaults;
+    wifiConfig = defaults;
+  }
+
+  wifiConnect(resetWifi);
 
   setWebHandles();
 
@@ -460,6 +464,9 @@ void handleWebserver()
       runningSince = String(buffer);
     }
   }
+
+  
+
   server.handleClient();
 }
 
