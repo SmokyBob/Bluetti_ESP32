@@ -22,12 +22,11 @@ void setup()
   // initialize the queue used to share device state between processes
   bluetti_data_queue = xQueueCreate(1, sizeof(bluetti_device_state));
 
-  // TODO: Config parametere to enable this feature?
   initLog(); // Init debug log to file
-  writeLog("---------------------------");
-  writeLog("Starting");
 
   initBWifi(false); // Init Wifi and WebServer
+  writeLog("---------------------------");
+  writeLog("Starting");
   initBluetooth();
 
   esp_task_wdt_init(WDT_TIMEOUT, true); // enable panic so ESP32 restarts
@@ -82,7 +81,7 @@ void loop()
     Serial.println("Wifi Not connected! Reconnecting");
     writeLog("Wifi Not connected! Reconnecting");
     esp_task_wdt_delete(NULL); // Remove watchdog
-    delay(10000);//Wait 10 secs before trying again
+    delay(10000);              // Wait 10 secs before trying again
     wifiConnect(false);        // REinit Wifi
   }
   else
@@ -102,12 +101,16 @@ void loop()
     }
   }
 
-#ifdef FORCED_REBOOT_HRS
-  if (millis() > (FORCED_REBOOT_HRS * 60 * 60 * 1000))
+  if (wifiConfig.forcedResetHRS != 0)
   {
-    ESP.restart();
+
+    if (millis() > (wifiConfig.forcedResetHRS * 60 * 60 * 1000))
+    {
+      writeLog("Forced restart after " + String(wifiConfig.forcedResetHRS) + " Hrs");
+      delay(500);
+      ESP.restart();
+    }
   }
-#endif
 
   delay(50); // Delay to give time to other internal tasks to run
 }

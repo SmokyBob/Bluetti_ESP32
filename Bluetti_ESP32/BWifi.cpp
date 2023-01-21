@@ -49,10 +49,18 @@ void root_HTML()
 
   String data = "<HTML>";
   data = data + "<HEAD>" +
-         "<TITLE>" + DEVICE_NAME + "</TITLE>" +
-         "<meta http-equiv='refresh' content='10'>" +
-         "</HEAD>";
+         "<TITLE>" + DEVICE_NAME + "</TITLE>";
+
+  if (wifiConfig.homeRefreshS > 0)
+  {
+    data = data + "<meta http-equiv='refresh' content='" + wifiConfig.homeRefreshS + "'>";
+  }
+  data = data + "</HEAD>";
   data = data + "<BODY>";
+  if (wifiConfig.homeRefreshS > 0)
+  {
+    data = data + "<b>Page autorefresh every " + wifiConfig.homeRefreshS + " secs</b></br>";
+  }
   data = data + "<table border='0'>";
   data = data + "<tr><td>host:</td><td>" + WiFi.localIP().toString() + "</td>" +
          "<td><a href='./rebootDevice'>Reboot this device</a></td></tr>";
@@ -63,14 +71,34 @@ void root_HTML()
   data = data + "<tr><td>MAC:</td><td>" + WiFi.macAddress() + "</td></tr>";
   data = data + "<tr><td>uptime :</td><td>" + convertMilliSecondsToHHMMSS(millis()) + "</td>" +
          "<td>Running since: " + runningSince + "</td></tr>";
-  data = data + "<tr><td>uptime (d):</td><td>" + millis() / 3600000 / 24 + "</td>" +
-         "<td><b><a href='./debugLog' target='_blank'>Debug Log</a></b></td></tr>";
-  data = data + "<tr><td>Bluetti device id:</td><td>" + wifiConfig.bluetti_device_id + "</td>" +
-         "<td><b><a href='./dataLog' target='_blank'>Bluetti data Log</a></b></td></tr>";
+  data = data + "<tr><td>uptime (d):</td><td>" + millis() / 3600000 / 24 + "</td></tr>";
+  data = data + "<tr><td>Bluetti device id:</td><td>" + wifiConfig.bluetti_device_id + "</td>";
+  if (wifiConfig.useBTFilelog)
+  {
+    data = data + "<td><a href='./dataLog' target='_blank'>Bluetti data Log</a></td>";
+  }
+  data = data + "</tr>";
+
   data = data + "<tr><td>BT connected:</td><td><input type='checkbox' " + ((isBTconnected()) ? "checked" : "") + " onclick='return false;' /></td>" +
          ((!isBTconnected()) ? "" : "<td><input type='button' onclick='location.href=\"./btDisconnect\"' value='Disconnect from BT'/></td>") + "</tr>";
   data = data + "<tr><td>BT last message time:</td><td>" + convertMilliSecondsToHHMMSS(getLastBTMessageTime()) + "</td></tr>";
-  data = data + "<tr><td>Free Heap (Bytes):</td><td>" + String(ESP.getFreeHeap()) + "</td></tr>";
+  if (wifiConfig.showDebugInfos)
+  {
+    data = data + "<tr><td colspan='3'><hr></td></tr>";
+    float perc;
+    perc = float(ESP.getFreeHeap()) / float(ESP.getHeapSize());
+    data = data + "<tr><td>Free Heap (Bytes):</td><td>" + ESP.getFreeHeap() + " of " + ESP.getHeapSize() + " (" + perc * 100 + " %)</td></tr>";
+    data = data + "<tr><td><a href='./debugLog' target='_blank'>Debug Log</a></td>" +
+           "<td><b><a href='./clearLog' target='_blank'>Clear Debug Log</a></b></td></tr>";
+    if (wifiConfig.useDbgFilelog)
+    {
+      data = data + "<tr><td><b><a href='./clearBtData' target='_blank'>Clear Bluetti Data Log</a></b></td></tr>";
+    }
+
+    perc = float(SPIFFS.usedBytes()) / float(SPIFFS.totalBytes());
+    data = data + "<tr><td>SPIFFS Used (Bytes):</td><td>" + SPIFFS.usedBytes() + " of " + SPIFFS.totalBytes() + " (" + perc * 100 + " %)</td></tr>";
+  }
+
   data = data + "<tr><td colspan='3'><hr></td></tr>";
   if (isBTconnected())
   {
@@ -210,7 +238,15 @@ void config_HTML(bool paramsSaved = false, bool resetRequired = false)
          "<td><input type='text' size=25 name='IFTT_Event_high' value='" + wifiConfig.IFTT_Event_high + "' /></td></tr>";
   data = data + "<tr class'showIFTT'><td>IFTT high Battery percentage:</td>" +
          "<td><input type='number' placeholder='1.0' step='1' min='0' max='100' name='IFTT_high_bl' value='" + wifiConfig.IFTT_high_bl + "' /></td></tr>";
-  // Serial.println(wifiConfig.IFTT_high_bl);
+
+  data = data + "<tr><td>Home Page Auto Refresh (sec, if 0 = No AutoRefresh):</td>" +
+         "<td><input type='number' placeholder='1.0' step='1' min='0' max='3600' name='homeRefreshS' value='" + wifiConfig.homeRefreshS + "' /></td></tr>";
+  data = data + "<tr><td>Show Debug Infos (FreeHeap, debugLog Link, etc...):</td>" +
+         "<td><input type='checkbox' name='showDebugInfos' value='showDebugInfosBool' " + ((wifiConfig.showDebugInfos) ? "checked" : "") + +" /></td></tr>";
+  data = data + "<tr><td>Enable Debug logging to File:</td>" +
+         "<td><input type='checkbox' name='useDbgFilelog' value='useDbgFilelogBool' " + ((wifiConfig.useDbgFilelog) ? "checked" : "") + +" /></td></tr>";
+  data = data + "<tr><td>Enable Bluetti Data Log to file :</td>" +
+         "<td><input type='checkbox' name='useBTFilelog' value='useBTFilelogBool' " + ((wifiConfig.useBTFilelog) ? "checked" : "") + +" /></td></tr>";
 
   // TODO: add other parameters accordingly
   data = data + "</table>" +
@@ -265,14 +301,17 @@ void config_POST()
     wifiConfig.IFTT_low_bl = server.arg("IFTT_low_bl").toInt();
     wifiConfig.IFTT_Event_high = server.arg("IFTT_Event_high");
     wifiConfig.IFTT_high_bl = server.arg("IFTT_high_bl").toInt();
-    // Serial.println(wifiConfig.IFTT_high_bl);
-    // Serial.println("-------------");
-    // Serial.println(server.arg("IFTT_high_bl"));
   }
   else
   {
     wifiConfig.useIFTT = false;
   }
+
+  wifiConfig.homeRefreshS = server.arg("homeRefreshS").toInt();
+
+  wifiConfig.showDebugInfos = server.hasArg("showDebugInfos");
+  wifiConfig.useDbgFilelog = server.hasArg("useDbgFilelog");
+  wifiConfig.useBTFilelog = server.hasArg("useBTFilelog");
 
   // TODO: manage other parameters accordingly
 
@@ -305,7 +344,7 @@ void showDataLog_HTML()
 {
   // File Download instead of show
   File download = SPIFFS.open("/bluetti_data.json", FILE_READ);
-  server.sendHeader("Content-Type", "text/text");//Return as text
+  server.sendHeader("Content-Type", "text/text"); // Return as text
   server.sendHeader("Content-Disposition", "attachment; filename=bluetti_data.json");
   server.sendHeader("Connection", "close");
   server.streamFile(download, "application/octet-stream");
@@ -371,7 +410,8 @@ void setWebHandles()
 
 #pragma endregion Async Ws handlers
 
-void wifiConnect(bool resetWifi){
+void wifiConnect(bool resetWifi)
+{
   WiFiManager wifiManager;
 
   if (resetWifi)
@@ -464,8 +504,6 @@ void handleWebserver()
       runningSince = String(buffer);
     }
   }
-
-  
 
   server.handleClient();
 }

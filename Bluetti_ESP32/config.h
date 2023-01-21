@@ -35,9 +35,6 @@ static String ntpServer = "pool.ntp.org";
 static long gmtOffset_sec = 3600 * (+1);
 static int daylightOffset_sec = 3600;
 
-// If defined, the device will be forcefully rebooted every X hours
-// #define FORCED_REBOOT_HRS 12
-
 // N.B. if changed, update the function config_HTML to edit the fields
 // readConfigs and saveConfig needs to be updated too
 typedef struct
@@ -53,10 +50,15 @@ typedef struct
   String IFTT_Event_high = ""; // If "" no event triggered
   uint8_t IFTT_high_bl = 0;
 
-  // bool use_Meross = false;
-  // //TODO: add meross parameters
-  // bool use_Relay = false;
-  // //TODO: add Relay GPIO.. when tested
+  // Root Page configs
+  uint8_t homeRefreshS = 30;   // 0 disables autorefresh
+  bool showDebugInfos = false; // shows FreeHeap, debugLog Link, etc...
+  // Logging
+  bool useBTFilelog = false;
+  bool useDbgFilelog = false;
+
+  // Just in case the board misbehave
+  uint8_t forcedResetHRS = 0;
 
 } ESPBluettiSettings;
 
