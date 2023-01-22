@@ -7,15 +7,6 @@
 #include <WebServer.h>
 
 WebServer server(80);
-// bool shouldSaveConfig = false;
-
-// char bluetti_device_id[40] = "e.g. ACXXXYYYYYYYY";
-// char use_Meross[6] = "false";
-// char use_Relay[6] = "false";
-
-// void saveConfigCallback () {
-//   shouldSaveConfig = true;
-// }
 
 void resetConfig()
 {
