@@ -2,6 +2,8 @@
 #include "PayloadParser.h"
 #include "IFTTT.h"
 #include "utils.h"
+#include "config.h"
+#include "BTooth.h"
 
 uint16_t parse_uint_field(uint8_t data[])
 {
@@ -220,6 +222,19 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
       Serial.println("TOTAL_BATTERY_PERCENT: " + return_data[TOTAL_BATTERY_PERCENT].f_value);
       Serial.println("AC_INPUT_POWER: " + return_data[AC_INPUT_POWER].f_value);
 #endif
+      // check if the connected device id is still the requested
+      if (return_data[DEVICE_TYPE].f_value + return_data[SERIAL_NUMBER].f_value != wifiConfig.bluetti_device_id)
+      {
+        // The device id is incorrect
+        writeLog("Wrong device id received: " + return_data[DEVICE_TYPE].f_value + return_data[SERIAL_NUMBER].f_value);
+        writeLog("Reconnecting to BT in 2 secs");
+        disconnectBT();
+        delay(2 * 1000);
+        writeLog("-------------------");
+        doConnect = true;
+        connectToServer();
+        return; // wait for next correct data
+      }
 #if DEBUG <= 5
       writeLog("Bluetti data received");
 #endif

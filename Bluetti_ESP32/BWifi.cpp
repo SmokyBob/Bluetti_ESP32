@@ -73,15 +73,26 @@ void root_HTML()
   data = data + "<tr><td>BT connected:</td><td><input type='checkbox' " + ((isBTconnected()) ? "checked" : "") + " onclick='return false;' /></td>" +
          ((!isBTconnected()) ? "" : "<td><input type='button' onclick='location.href=\"./btDisconnect\"' value='Disconnect from BT'/></td>") + "</tr>";
   data = data + "<tr><td>BT last message time:</td><td>" + convertMilliSecondsToHHMMSS(getLastBTMessageTime()) + "</td></tr>";
+
+  float perc;
+  perc = float(ESP.getFreeHeap()) / float(ESP.getHeapSize());
+  String toLog = "";
+  toLog = toLog + "Free Heap (Bytes): " + ESP.getFreeHeap() + " of " + ESP.getHeapSize() + " (" + perc * 100 + " %)";
+  writeLog(toLog);
+  toLog = "";
+  perc = float(SPIFFS.usedBytes()) / float(SPIFFS.totalBytes());
+  toLog = toLog + "SPIFFS Used (Bytes): " + SPIFFS.usedBytes() + " of " + SPIFFS.totalBytes() + " (" + perc * 100 + " %)";
+  writeLog(toLog);
+
   if (wifiConfig.showDebugInfos)
   {
     data = data + "<tr><td colspan='3'><hr></td></tr>";
-    float perc;
+
     perc = float(ESP.getFreeHeap()) / float(ESP.getHeapSize());
     data = data + "<tr><td>Free Heap (Bytes):</td><td>" + ESP.getFreeHeap() + " of " + ESP.getHeapSize() + " (" + perc * 100 + " %)</td></tr>";
     data = data + "<tr><td><a href='./debugLog' target='_blank'>Debug Log</a></td>" +
            "<td><b><a href='./clearLog' target='_blank'>Clear Debug Log</a></b></td></tr>";
-    if (wifiConfig.useDbgFilelog)
+    if (wifiConfig.useBTFilelog)
     {
       data = data + "<tr><td><b><a href='./clearBtData' target='_blank'>Clear Bluetti Data Log</a></b></td></tr>";
     }
@@ -350,6 +361,7 @@ void setWebHandles()
   server.on("/rebootDevice", HTTP_GET, []()
             {
     server.send(200, "text/plain", "reboot in 2sec");
+    writeLog("Device Reboot requested!");
     disconnectBT();//Gracefully disconnect from BT
     delay(2000);
     ESP.restart(); });
