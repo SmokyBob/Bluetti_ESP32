@@ -53,7 +53,7 @@ void writeLog(String message)
 
 void saveBTData(String message)
 {
-  if (wifiConfig.useBTFilelog)
+  if (wifiConfig._useBTFilelog)
   {
     message = message + "\n"; // Add new line each file save
     va_list args;

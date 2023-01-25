@@ -64,7 +64,7 @@ void root_HTML()
          "<td>Running since: " + runningSince + "</td></tr>";
   data = data + "<tr><td>uptime (d):</td><td>" + millis() / 3600000 / 24 + "</td></tr>";
   data = data + "<tr><td>Bluetti device id:</td><td>" + wifiConfig.bluetti_device_id + "</td>";
-  if (wifiConfig.useBTFilelog)
+  if (wifiConfig._useBTFilelog)
   {
     data = data + "<td><a href='./dataLog' target='_blank'>Bluetti data Log</a></td>";
   }
@@ -92,7 +92,7 @@ void root_HTML()
     data = data + "<tr><td>Free Heap (Bytes):</td><td>" + ESP.getFreeHeap() + " of " + ESP.getHeapSize() + " (" + perc * 100 + " %)</td></tr>";
     data = data + "<tr><td><a href='./debugLog' target='_blank'>Debug Log</a></td>" +
            "<td><b><a href='./clearLog' target='_blank'>Clear Debug Log</a></b></td></tr>";
-    if (wifiConfig.useBTFilelog)
+    if (wifiConfig._useBTFilelog)
     {
       data = data + "<tr><td><b><a href='./clearBtData' target='_blank'>Clear Bluetti Data Log</a></b></td></tr>";
     }
@@ -241,14 +241,19 @@ void config_HTML(bool paramsSaved = false, bool resetRequired = false)
   data = data + "<tr class'showIFTT'><td>IFTT high Battery percentage:</td>" +
          "<td><input type='number' placeholder='1.0' step='1' min='0' max='100' name='IFTT_high_bl' value='" + wifiConfig.IFTT_high_bl + "' /></td></tr>";
 
+  data = data + "<tr><td>&nbsp;</td></tr>";
   data = data + "<tr><td>Home Page Auto Refresh (sec, if 0 = No AutoRefresh):</td>" +
          "<td><input type='number' placeholder='1.0' step='1' min='0' max='3600' name='homeRefreshS' value='" + wifiConfig.homeRefreshS + "' /></td></tr>";
   data = data + "<tr><td>Show Debug Infos (FreeHeap, debugLog Link, etc...):</td>" +
          "<td><input type='checkbox' name='showDebugInfos' value='showDebugInfosBool' " + ((wifiConfig.showDebugInfos) ? "checked" : "") + +" /></td></tr>";
   data = data + "<tr><td>Enable Debug logging to File:</td>" +
          "<td><input type='checkbox' name='useDbgFilelog' value='useDbgFilelogBool' " + ((wifiConfig.useDbgFilelog) ? "checked" : "") + +" /></td></tr>";
-  data = data + "<tr><td>Enable Bluetti Data Log to file :</td>" +
-         "<td><input type='checkbox' name='useBTFilelog' value='useBTFilelogBool' " + ((wifiConfig.useBTFilelog) ? "checked" : "") + +" /></td></tr>";
+
+  data = data + "<tr><td>&nbsp;</td></tr>";
+  data = data + "<tr><td>Bluetti Data Log Auto Start (HH:MM) (empty=no start):</td>" +
+         "<td><input type='text' size=5 name='BtLogTime_Start' value='" + wifiConfig.BtLogTime_Start + "' /></td></tr>";
+  data = data + "<tr><td>Bluetti Data Log Auto Stop (HH:MM)  (empty=no stop):</td>" +
+         "<td><input type='text' size=5 name='BtLogTime_Stop' value='" + wifiConfig.BtLogTime_Stop + "' /></td></tr>";
 
   // TODO: add other parameters accordingly
   data = data + "</table>" +
@@ -312,8 +317,10 @@ void config_POST()
   wifiConfig.homeRefreshS = server.arg("homeRefreshS").toInt();
 
   wifiConfig.showDebugInfos = server.hasArg("showDebugInfos");
+  wifiConfig._useBTFilelog = server.hasArg("_useBTFilelog");
   wifiConfig.useDbgFilelog = server.hasArg("useDbgFilelog");
-  wifiConfig.useBTFilelog = server.hasArg("useBTFilelog");
+  wifiConfig.BtLogTime_Start = server.arg("BtLogTime_Start");
+  wifiConfig.BtLogTime_Stop = server.arg("BtLogTime_Stop");
 
   // TODO: manage other parameters accordingly
 

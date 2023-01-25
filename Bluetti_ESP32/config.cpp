@@ -29,8 +29,10 @@ void readConfigs()
 
   wifiConfig.homeRefreshS = prf_config.getShort("homeRefreshS", 0);
   wifiConfig.showDebugInfos = prf_config.getBool("showDebugInfos", false);
-  wifiConfig.useBTFilelog = prf_config.getBool("useBTFilelog", false);
   wifiConfig.useDbgFilelog = prf_config.getBool("useDbgFilelog", false);
+  
+  wifiConfig.BtLogTime_Start = prf_config.getString("BtLogTime_Start", "");
+  wifiConfig.BtLogTime_Stop = prf_config.getString("BtLogTime_Stop", "");
 
   prf_config.end();
 }
@@ -56,8 +58,11 @@ void saveConfig()
 
   prf_config.putShort("homeRefreshS", wifiConfig.homeRefreshS);
   prf_config.putBool("showDebugInfos", wifiConfig.showDebugInfos);
-  prf_config.putBool("useBTFilelog", wifiConfig.useBTFilelog);
   prf_config.putBool("useDbgFilelog", wifiConfig.useDbgFilelog);
+
+  prf_config.putString("BtLogTime_Start", wifiConfig.BtLogTime_Start);
+  prf_config.putString("BtLogTime_Stop", wifiConfig.BtLogTime_Stop);
+  
 
   prf_config.end();
 }

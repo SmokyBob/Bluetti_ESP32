@@ -111,6 +111,70 @@ void loop()
       ESP.restart();
     }
   }
+  // Get Current Time to write before the log
+  // Full param list
+  // https://cplusplus.com/reference/ctime/strftime/
+
+  char buffer[80];
+  time_t tt = time(0);
+  tm *currTime = localtime(&tt);
+  bool enableLog = false;
+
+  if (wifiConfig.BtLogTime_Start.length() > 0)
+  {
+    uint8_t hh = -1;
+    u_int8_t mm = -1;
+
+    try
+    {
+      sscanf(wifiConfig.BtLogTime_Start.c_str(), "%d:%d", &hh, &mm);
+    }
+    catch (const std::exception &e)
+    {
+      // Do mothing
+      hh = -1;
+      mm = -1;
+    }
+
+    if (currTime->tm_hour >= hh && currTime->tm_min >= mm)
+    {
+      enableLog = true;
+    }
+  }
+  if (wifiConfig.BtLogTime_Stop.length() > 0)
+  {
+    uint8_t hh = -1;
+    u_int8_t mm = -1;
+
+    try
+    {
+      sscanf(wifiConfig.BtLogTime_Stop.c_str(), "%d:%d", &hh, &mm);
+    }
+    catch (const std::exception &e)
+    {
+      // Do mothing
+      hh = -1;
+      mm = -1;
+    }
+
+    if (currTime->tm_hour >= hh && currTime->tm_min >= mm)
+    {
+      enableLog = false;
+    }
+  }
+
+  if (enableLog != wifiConfig._useBTFilelog)
+  {
+    wifiConfig._useBTFilelog = enableLog;
+    if (enableLog)
+    {
+      writeLog("Auto Start Bluetti Data Log");
+    }
+    else
+    {
+      writeLog("Auto STOP Bluetti Data Log");
+    }
+  }
 
   delay(50); // Delay to give time to other internal tasks to run
 }

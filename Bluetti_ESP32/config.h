@@ -54,8 +54,10 @@ typedef struct
   uint8_t homeRefreshS = 30;   // 0 disables autorefresh
   bool showDebugInfos = false; // shows FreeHeap, debugLog Link, etc...
   // Logging
-  bool useBTFilelog = false;
   bool useDbgFilelog = false;
+  bool _useBTFilelog = false;
+  String BtLogTime_Start = "";
+  String BtLogTime_Stop = "";
 
   // Just in case the board misbehave
   uint8_t forcedResetHRS = 0;
