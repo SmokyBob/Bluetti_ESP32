@@ -3,9 +3,6 @@
 #include "config.h"
 #include <Preferences.h>
 
-bool _rebootDevice = false;
-bool _resetWifiConfig = false;
-
 ESPBluettiSettings wifiConfig;
 
 Preferences prf_config;
@@ -33,7 +30,7 @@ void readConfigs()
   wifiConfig.homeRefreshS = prf_config.getShort("homeRefreshS", 0);
   wifiConfig.showDebugInfos = prf_config.getBool("showDebugInfos", false);
   wifiConfig.useDbgFilelog = prf_config.getBool("useDbgFilelog", false);
-
+  
   wifiConfig.BtLogTime_Start = prf_config.getString("BtLogTime_Start", "");
   wifiConfig.BtLogTime_Stop = prf_config.getString("BtLogTime_Stop", "");
 
@@ -65,6 +62,7 @@ void saveConfig()
 
   prf_config.putString("BtLogTime_Start", wifiConfig.BtLogTime_Start);
   prf_config.putString("BtLogTime_Stop", wifiConfig.BtLogTime_Stop);
+  
 
   prf_config.end();
 }

@@ -66,10 +66,6 @@ typedef struct
 
 extern ESPBluettiSettings wifiConfig;
 
-// Vars to handle commands received from the web that require delays
-extern bool _rebootDevice;
-extern bool _resetWifiConfig;
-
 extern void readConfigs();
 
 extern void saveConfig();

@@ -4,16 +4,9 @@
 #include <WiFiManager.h>
 #include <ESPmDNS.h>
 #include "utils.h"
-#ifdef ESP32
-#include <WiFi.h>
-#include <AsyncTCP.h>
-#elif defined(ESP8266)
-#include <ESP8266WiFi.h>
-#include <ESPAsyncTCP.h>
-#endif
-#include <ESPAsyncWebServer.h>
+#include <WebServer.h>
 
-AsyncWebServer server(80);
+WebServer server(80);
 
 void resetConfig()
 {
@@ -29,7 +22,7 @@ void resetConfig()
 
 device_field_data_t bluetti_state_data[sizeof(bluetti_device_state) / sizeof(device_field_data_t)];
 
-void root_HTML(AsyncWebServerRequest *request)
+void root_HTML()
 {
 #if DEBUG <= 4
   Serial.print("handleRoot() running on core ");
@@ -127,29 +120,24 @@ void root_HTML(AsyncWebServerRequest *request)
   }
   data = data + "</table></BODY></HTML>";
 
-  request->send(200, "text/html; charset=utf-8", data);
+  server.send(200, "text/html; charset=utf-8", data);
 }
 
-void notFound(AsyncWebServerRequest *request)
+void notFound()
 {
-  bool isPost = true;
-
-  if (request->methodToString() == "GET")
-    isPost = false;
-
   String message = "File Not Found\n\n";
   message += "URI: ";
-  message += request->url();
+  message += server.uri();
   message += "\nMethod: ";
-  message += request->methodToString();
+  message += (server.method() == HTTP_GET) ? "GET" : "POST";
   message += "\nArguments: ";
-  message += request->args();
+  message += server.args();
   message += "\n";
-  for (uint8_t i = 0; i < request->args(); i++)
+  for (uint8_t i = 0; i < server.args(); i++)
   {
-    message += " " + request->getParam(i)->name() + ": " + request->getParam(i)->value() + "\n";
+    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
   }
-  request->send(404, "text/plain", message);
+  server.send(404, "text/plain", message);
 }
 
 void handleBTCommand(String topic, String payloadData)
@@ -184,36 +172,35 @@ void handleBTCommand(String topic, String payloadData)
 const char *PARAM_TYPE = "type";
 const char *PARAM_VAL = "value";
 
-void command_HTML(AsyncWebServerRequest *request)
+void command_HTML()
 {
 
   String topic = "";
   String payload = "";
-  bool isPost = true;
 
-  if (request->methodToString() == "GET")
-    isPost = false;
-
-  if (request->hasParam(PARAM_TYPE, isPost))
-    topic = request->getParam(PARAM_TYPE, isPost)->value();
-
-  if (request->hasParam(PARAM_VAL, isPost))
-    payload = request->getParam(PARAM_VAL, isPost)->value();
+  if (server.hasArg(PARAM_TYPE))
+  {
+    topic = server.arg(PARAM_TYPE);
+  }
+  if (server.hasArg(PARAM_VAL))
+  {
+    payload = server.arg(PARAM_VAL);
+  }
 
   if (topic == "" || payload == "")
   {
-    request->send(200, "text/plain", "command data invalid: " + String(PARAM_TYPE) + " " + topic + " - " + String(PARAM_VAL) + " " + payload);
+    server.send(200, "text/plain", "command data invalid: " + String(PARAM_TYPE) + " " + topic + " - " + String(PARAM_VAL) + " " + payload);
   }
   else
   {
-    request->send(200, "text/plain", "Hello, POST: " + String(PARAM_TYPE) + " " + topic + " - " + String(PARAM_VAL) + " " + payload);
+    server.send(200, "text/plain", "Hello, POST: " + String(PARAM_TYPE) + " " + topic + " - " + String(PARAM_VAL) + " " + payload);
 
     // TODO: Check if the topic is one for the commands (bluetti_device_command[])
     handleBTCommand(topic, payload);
   }
 }
 
-void config_HTML(AsyncWebServerRequest *request, bool paramsSaved = false, bool resetRequired = false)
+void config_HTML(bool paramsSaved = false, bool resetRequired = false)
 {
   // html to edit ESPBluettiSettings values
   String data = "<HTML>";
@@ -273,29 +260,29 @@ void config_HTML(AsyncWebServerRequest *request, bool paramsSaved = false, bool 
          "<input type='submit' value='Save'>" +
          "</form></BODY></HTML>";
 
-  request->send(200, "text/html; charset=utf-8", data);
+  server.send(200, "text/html; charset=utf-8", data);
 
-  _rebootDevice = resetRequired;
+  if (resetRequired)
+  {
+    delay(2000);
+    ESP.restart();
+  }
 }
 
-void config_POST(AsyncWebServerRequest *request)
+void config_POST()
 {
   bool resetRequired = false;
 
-  bool isPost = true;
+  char tmp[40];
+  strcpy(tmp, server.arg("bluetti_device_id").c_str());
 
-  if (request->methodToString() == "GET")
-    isPost = false;
-
-  String tmp = request->getParam("bluetti_device_id", isPost)->value();
-
-  if (tmp.compareTo(wifiConfig.bluetti_device_id) != 0)
+  if (strcmp(tmp, wifiConfig.bluetti_device_id.c_str()) != 0)
   {
-    wifiConfig.bluetti_device_id = tmp;
+    wifiConfig.bluetti_device_id = server.arg("bluetti_device_id");
     resetRequired = true;
   }
 
-  if (request->hasParam("APMode", isPost))
+  if (server.hasArg("APMode"))
   {
     if (wifiConfig.APMode != true)
     {
@@ -313,55 +300,64 @@ void config_POST(AsyncWebServerRequest *request)
   }
 
   // IFTT (no restart required)
-  if (request->hasParam("useIFTT", isPost))
+  if (server.hasArg("useIFTT"))
   {
     wifiConfig.useIFTT = true;
-    wifiConfig.IFTT_Key = request->getParam("IFTT_Key", isPost)->value();
-    wifiConfig.IFTT_Event_low = request->getParam("IFTT_Event_low", isPost)->value();
-    wifiConfig.IFTT_low_bl = request->getParam("IFTT_low_bl", isPost)->value().toInt();
-    wifiConfig.IFTT_Event_high = request->getParam("IFTT_Event_high", isPost)->value();
-    wifiConfig.IFTT_high_bl = request->getParam("IFTT_high_bl", isPost)->value().toInt();
+    wifiConfig.IFTT_Key = server.arg("IFTT_Key");
+    wifiConfig.IFTT_Event_low = server.arg("IFTT_Event_low");
+    wifiConfig.IFTT_low_bl = server.arg("IFTT_low_bl").toInt();
+    wifiConfig.IFTT_Event_high = server.arg("IFTT_Event_high");
+    wifiConfig.IFTT_high_bl = server.arg("IFTT_high_bl").toInt();
   }
   else
   {
     wifiConfig.useIFTT = false;
   }
 
-  wifiConfig.homeRefreshS = request->getParam("homeRefreshS", isPost)->value().toInt();
+  wifiConfig.homeRefreshS = server.arg("homeRefreshS").toInt();
 
-  wifiConfig.showDebugInfos = request->hasParam("showDebugInfos", isPost);
-  wifiConfig._useBTFilelog = request->hasParam("_useBTFilelog", isPost);
-  wifiConfig.useDbgFilelog = request->hasParam("useDbgFilelog", isPost);
-  wifiConfig.BtLogTime_Start = request->getParam("BtLogTime_Start",isPost)->value();
-  wifiConfig.BtLogTime_Stop = request->getParam("BtLogTime_Stop",isPost)->value();
+  wifiConfig.showDebugInfos = server.hasArg("showDebugInfos");
+  wifiConfig._useBTFilelog = server.hasArg("_useBTFilelog");
+  wifiConfig.useDbgFilelog = server.hasArg("useDbgFilelog");
+  wifiConfig.BtLogTime_Start = server.arg("BtLogTime_Start");
+  wifiConfig.BtLogTime_Stop = server.arg("BtLogTime_Stop");
 
   // TODO: manage other parameters accordingly
 
-  // Save configuration to Preferences
+  // Save configuration to Eprom
   saveConfig();
 
   // Config Data Updated, refresh the page
-  config_HTML(request, true, resetRequired);
+  config_HTML(true, resetRequired);
 }
 
-void disableBT_HTML(AsyncWebServerRequest *request)
+void disableBT_HTML()
 {
   disconnectBT();
-  request->send(200, "text/html",
-                "<html><body onload='location.href=\"./\"';></body></html>");
+  server.send(200, "text/html",
+              "<html><body onload='location.href=\"./\"';></body></html>");
 }
 
-void showDebugLog_HTML(AsyncWebServerRequest *request)
+void showDebugLog_HTML()
 {
   // File Download instead of show
-  request->send(SPIFFS, "/debug_log.txt", "text/text", true);
-
+  File download = SPIFFS.open("/debug_log.txt", FILE_READ);
+  server.sendHeader("Content-Type", "text/text");
+  server.sendHeader("Content-Disposition", "attachment; filename=debug_log.txt");
+  server.sendHeader("Connection", "close");
+  server.streamFile(download, "application/octet-stream");
+  download.close();
 }
 
-void showDataLog_HTML(AsyncWebServerRequest *request)
+void showDataLog_HTML()
 {
   // File Download instead of show
-  request->send(SPIFFS, "/bluetti_data.json", "text/text", true);
+  File download = SPIFFS.open("/bluetti_data.json", FILE_READ);
+  server.sendHeader("Content-Type", "text/text"); // Return as text
+  server.sendHeader("Content-Disposition", "attachment; filename=bluetti_data.json");
+  server.sendHeader("Connection", "close");
+  server.streamFile(download, "application/octet-stream");
+  download.close();
 }
 
 void setWebHandles()
@@ -369,23 +365,26 @@ void setWebHandles()
   // WebServerConfig
   server.on("/", HTTP_GET, root_HTML);
 
-  server.on("/rebootDevice", HTTP_GET, [](AsyncWebServerRequest *request)
+  server.on("/rebootDevice", HTTP_GET, []()
             {
-    request->send(200, "text/plain", "reboot in 2sec");
+    server.send(200, "text/plain", "reboot in 2sec");
     writeLog("Device Reboot requested!");
     disconnectBT();//Gracefully disconnect from BT
-    _rebootDevice = true; });
+    delay(2000);
+    ESP.restart(); });
 
-  server.on("/resetWifiConfig", HTTP_GET, [](AsyncWebServerRequest *request)
+  server.on("/resetWifiConfig", HTTP_GET, []()
             {
-    request->send(200, "text/plain", "reset Wifi and reboot in 2sec");
-    _resetWifiConfig = true; });
+    server.send(200, "text/plain", "reset Wifi and reboot in 2sec");
+    delay(2000);
+    initBWifi(true); });
 
-  server.on("/resetConfig", HTTP_GET, [](AsyncWebServerRequest *request)
+  server.on("/resetConfig", HTTP_GET, []()
             {
-    request->send(200, "text/plain", "reset FULL CONFIG and reboot in 2sec");
+    server.send(200, "text/plain", "reset FULL CONFIG and reboot in 2sec");
     resetConfig();
-    _rebootDevice = true; });
+    delay(2000);
+    ESP.restart(); });
 
   // Commands come in with a form to the /post endpoint
   server.on("/post", HTTP_POST, command_HTML);
@@ -393,8 +392,8 @@ void setWebHandles()
   // server.on("/get", HTTP_GET, command_HTML);
 
   // endpoints to update the config WITHOUT reset
-  server.on("/config", HTTP_GET, [](AsyncWebServerRequest *request)
-            { config_HTML(request, false); });
+  server.on("/config", HTTP_GET, []()
+            { config_HTML(false); });
   server.on("/config", HTTP_POST, config_POST);
 
   // BTDisconnect //TODO: post only with JS... when the html code is in a separate file
@@ -402,15 +401,15 @@ void setWebHandles()
 
   server.on("/debugLog", HTTP_GET, showDebugLog_HTML);
 
-  server.on("/clearLog", HTTP_GET, [](AsyncWebServerRequest *request)
+  server.on("/clearLog", HTTP_GET, []()
             {
               clearLog();
-              request->send(200, "text/plain", "Log Cleared"); });
+              server.send(200, "text/plain", "Log Cleared"); });
 
-  server.on("/clearBtData", HTTP_GET, [](AsyncWebServerRequest *request)
+  server.on("/clearBtData", HTTP_GET, []()
             {
               clearBtData();
-              request->send(200, "text/plain", "BtData Cleared"); });
+              server.send(200, "text/plain", "BtData Cleared"); });
 
   server.on("/dataLog", HTTP_GET, showDataLog_HTML);
 
@@ -478,7 +477,7 @@ void initBWifi(bool resetWifi)
 
   if (wifiConfig.salt != EEPROM_SALT)
   {
-    Serial.println("Invalid settings in Preferences, trying with defaults");
+    Serial.println("Invalid settings in EEPROM, trying with defaults");
     ESPBluettiSettings defaults;
     wifiConfig = defaults;
   }
@@ -516,7 +515,7 @@ void handleWebserver()
     }
   }
 
-  // server.handleClient();
+  server.handleClient();
 }
 
 String runningSince;
