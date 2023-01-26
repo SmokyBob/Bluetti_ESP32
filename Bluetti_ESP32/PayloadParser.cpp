@@ -126,10 +126,6 @@ uint16_t curr_AC_INPUT_POWER = 0;
 
 void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t length)
 {
-  device_field_data_t return_data[sizeof(bluetti_device_state) / sizeof(device_field_data_t)];
-  // Array Copy
-  copyArray(bluetti_device_state, return_data, (sizeof(bluetti_device_state) / sizeof(device_field_data_t)));
-
   switch (pData[1])
   {
   // range request
@@ -140,15 +136,15 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
     for (int i = 0; i < sizeof(bluetti_device_state) / sizeof(device_field_data_t); i++)
     {
       // filter fields not in range
-      if (return_data[i].f_page == page &&
-          return_data[i].f_offset >= offset &&
-          return_data[i].f_offset <= (offset + length) / 2 &&
-          return_data[i].f_offset + return_data[i].f_size - 1 >= offset &&
-          return_data[i].f_offset + return_data[i].f_size - 1 <= (offset + length) / 2)
+      if (bluetti_state_data[i].f_page == page &&
+          bluetti_state_data[i].f_offset >= offset &&
+          bluetti_state_data[i].f_offset <= (offset + length) / 2 &&
+          bluetti_state_data[i].f_offset + bluetti_state_data[i].f_size - 1 >= offset &&
+          bluetti_state_data[i].f_offset + bluetti_state_data[i].f_size - 1 <= (offset + length) / 2)
       {
 
-        uint8_t data_start = (2 * ((int)return_data[i].f_offset - (int)offset)) + HEADER_SIZE;
-        uint8_t data_end = (data_start + 2 * return_data[i].f_size);
+        uint8_t data_start = (2 * ((int)bluetti_state_data[i].f_offset - (int)offset)) + HEADER_SIZE;
+        uint8_t data_end = (data_start + 2 * bluetti_state_data[i].f_size);
         uint8_t data_payload_field[data_end - data_start];
 
         int p_index = 0;
@@ -158,46 +154,46 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
           p_index++;
         }
 
-        switch (return_data[i].f_type)
+        switch (bluetti_state_data[i].f_type)
         {
 
         case UINT_FIELD:
 
-          return_data[i].f_value = String(parse_uint_field(data_payload_field));
+          bluetti_state_data[i].f_value = String(parse_uint_field(data_payload_field));
           break;
 
         case BOOL_FIELD:
-          return_data[i].f_value = String((int)parse_bool_field(data_payload_field));
+          bluetti_state_data[i].f_value = String((int)parse_bool_field(data_payload_field));
           break;
 
         case DECIMAL_FIELD:
-          return_data[i].f_value = String(parse_decimal_field(data_payload_field, return_data[i].f_scale), 2);
+          bluetti_state_data[i].f_value = String(parse_decimal_field(data_payload_field, bluetti_state_data[i].f_scale), 2);
           break;
 
         case SN_FIELD:
           char sn[16];
           sprintf(sn, "%lld", parse_serial_field(data_payload_field));
-          return_data[i].f_value = String(sn);
+          bluetti_state_data[i].f_value = String(sn);
           break;
 
         case VERSION_FIELD:
-          return_data[i].f_value = String(parse_version_field(data_payload_field), 2);
+          bluetti_state_data[i].f_value = String(parse_version_field(data_payload_field), 2);
           break;
 
         case STRING_FIELD:
-          return_data[i].f_value = parse_string_field(data_payload_field);
+          bluetti_state_data[i].f_value = parse_string_field(data_payload_field);
           break;
 
         case ENUM_FIELD:
-          return_data[i].f_value = parse_enum_field(data_payload_field, return_data[i].f_enum);
+          bluetti_state_data[i].f_value = parse_enum_field(data_payload_field, bluetti_state_data[i].f_enum);
           break;
         default:
           break;
         }
 
 #if DEBUG <= 4
-        Serial.println(map_field_name(return_data[i].f_name).c_str());
-        Serial.println(return_data[i].f_value);
+        Serial.println(map_field_name(bluetti_state_data[i].f_name).c_str());
+        Serial.println(bluetti_state_data[i].f_value);
         Serial.println("----------------------");
 #endif
       }
@@ -212,21 +208,21 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
     Serial.println("New data received");
 #endif
 
-    curr_TOTAL_BATTERY_PERCENT = return_data[TOTAL_BATTERY_PERCENT].f_value.toInt();
-    curr_AC_INPUT_POWER = return_data[AC_INPUT_POWER].f_value.toInt();
+    curr_TOTAL_BATTERY_PERCENT = bluetti_state_data[TOTAL_BATTERY_PERCENT].f_value.toInt();
+    curr_AC_INPUT_POWER = bluetti_state_data[AC_INPUT_POWER].f_value.toInt();
 
     // Queue data only if useful data is received
     if (!(curr_TOTAL_BATTERY_PERCENT == 0 && curr_AC_INPUT_POWER == 0))
     {
 #if DEBUG <= 4
-      Serial.println("TOTAL_BATTERY_PERCENT: " + return_data[TOTAL_BATTERY_PERCENT].f_value);
-      Serial.println("AC_INPUT_POWER: " + return_data[AC_INPUT_POWER].f_value);
+      Serial.println("TOTAL_BATTERY_PERCENT: " + bluetti_state_data[TOTAL_BATTERY_PERCENT].f_value);
+      Serial.println("AC_INPUT_POWER: " + bluetti_state_data[AC_INPUT_POWER].f_value);
 #endif
       // check if the connected device id is still the requested
-      if (return_data[DEVICE_TYPE].f_value + return_data[SERIAL_NUMBER].f_value != wifiConfig.bluetti_device_id)
+      if (bluetti_state_data[DEVICE_TYPE].f_value + bluetti_state_data[SERIAL_NUMBER].f_value != wifiConfig.bluetti_device_id)
       {
         // The device id is incorrect
-        writeLog("Wrong device id received: " + return_data[DEVICE_TYPE].f_value + return_data[SERIAL_NUMBER].f_value);
+        writeLog("Wrong device id received: " + bluetti_state_data[DEVICE_TYPE].f_value + bluetti_state_data[SERIAL_NUMBER].f_value);
         writeLog("Reconnecting to BT in 2 secs");
         disconnectBT();
         delay(2 * 1000);
@@ -238,27 +234,20 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
 #if DEBUG <= 5
       writeLog("Bluetti data received");
 #endif
-      // Queue used to exchange data with the WebServer, but data is fetched only when the page is reloaded
-      xQueueReset(bluetti_data_queue); // free up the queue
-      if (xQueueSend(bluetti_data_queue, &return_data, 1000) == pdTRUE)
-      {
-#if DEBUG <= 5
-        Serial.println("bluetti_data saved in queue ");
-#endif
-        String jsonString; // N.B. in this case is faster and simpler than using ArduinoJSON
-        jsonString = "{\"timestamp\":\"" + getLocalTimeISO() + "\",";
-        for (int i = 0; i < sizeof(return_data) / sizeof(device_field_data_t); i++)
-        {
-          jsonString = jsonString + "\"" + map_field_name(return_data[i].f_name).c_str() + "\": " +
-                       " \"" + return_data[i].f_value + "\",";
-        }
-        // Remove last ","
-        jsonString = jsonString.substring(0, jsonString.length() - 1);
-        jsonString = jsonString + "}";
 
-        // Save data to file for later use
-        saveBTData(jsonString);
+      String jsonString; // N.B. in this case is faster and simpler than using ArduinoJSON
+      jsonString = "{\"timestamp\":\"" + getLocalTimeISO() + "\",";
+      for (int i = 0; i < sizeof(bluetti_state_data) / sizeof(device_field_data_t); i++)
+      {
+        jsonString = jsonString + "\"" + map_field_name(bluetti_state_data[i].f_name).c_str() + "\": " +
+                     " \"" + bluetti_state_data[i].f_value + "\",";
       }
+      // Remove last ","
+      jsonString = jsonString.substring(0, jsonString.length() - 1);
+      jsonString = jsonString + "}";
+
+      // Save data to file for later use
+      saveBTData(jsonString);
 
       if (wifiConfig.IFTT_low_bl != 0)
       {

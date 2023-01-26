@@ -19,9 +19,6 @@ void setup()
   // Init time
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer.c_str());
 
-  // initialize the queue used to share device state between processes
-  bluetti_data_queue = xQueueCreate(1, sizeof(bluetti_device_state));
-
   initLog(); // Init debug log to file
 
   initBWifi(false); // Init Wifi and WebServer
@@ -43,6 +40,7 @@ unsigned long serialTick = 0;
 
 void loop()
 {
+
 #if logHeap > 0
   if ((millis() - heapMillis) > (heapPrintSeconds * 1000))
   {

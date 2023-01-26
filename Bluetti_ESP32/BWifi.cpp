@@ -20,7 +20,7 @@ void resetConfig()
 
 #pragma region Async Ws handlers
 
-device_field_data_t bluetti_state_data[sizeof(bluetti_device_state) / sizeof(device_field_data_t)];
+
 
 void root_HTML()
 {
@@ -28,15 +28,6 @@ void root_HTML()
   Serial.print("handleRoot() running on core ");
   Serial.println(xPortGetCoreID());
 #endif
-  device_field_data_t return_data[sizeof(bluetti_device_state) / sizeof(device_field_data_t)];
-
-  if (xQueueReceive(bluetti_data_queue, &return_data, 200) == pdTRUE)
-  {
-#if DEBUG <= 5
-    Serial.println("Data Read from queue ");
-#endif
-    copyArray(return_data, bluetti_state_data, sizeof(bluetti_device_state) / sizeof(device_field_data_t));
-  }
 
   String data = "<HTML>";
   data = data + "<HEAD>" +

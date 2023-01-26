@@ -1,5 +1,4 @@
 #include "Arduino.h"
-// #include <EEPROM.h>
 #include "config.h"
 #include <Preferences.h>
 
