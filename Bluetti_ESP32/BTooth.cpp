@@ -276,7 +276,7 @@ void handleBluetooth()
     }
 
     // Check only if the client is not pourposely disconnected
-    if (doScan || connected)
+    if (doScan || doConnect || connected)
     {
       if ((millis() - lastBTMessage) > (MAX_DISCONNECTED_TIME_UNTIL_REBOOT * 60000))
       {
