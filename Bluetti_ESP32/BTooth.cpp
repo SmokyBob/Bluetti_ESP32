@@ -78,7 +78,7 @@ void initBluetooth()
   settings = wifiConfig;
 #if DEBUG <= 5
   Serial.print("settings.bluetti_device_id.length() = ");
-  Serial.println(settings.bluetti_device_id.length().toString());
+  Serial.println(settings.bluetti_device_id.length());
 #endif
 
   if (settings.bluetti_device_id.length() > 0)
@@ -267,12 +267,15 @@ void handleBluetooth()
       if (connectToServer())
       {
         Serial.println(F("We are now connected to the Bluetti BLE Server."));
+        writeLog("We are now connected to the Bluetti BLE Server.");
+        doConnect = false;
       }
       else
       {
-        Serial.println(F("We have failed to connect to the server; there is nothin more we will do."));
+        Serial.println(F("We have failed to connect to the server; there is nothin more we will do. nope, try again next loop (after 2 secs)"));
+        writeLog("We have failed to connect to the server; there is nothin more we will do. nope, try again next loop (after 2 secs)");
+        delay(2*1000);
       }
-      doConnect = false;
     }
 
     // Check only if the client is not pourposely disconnected
