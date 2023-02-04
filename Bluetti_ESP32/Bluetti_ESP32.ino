@@ -18,6 +18,13 @@ void setup()
 
   // Init time
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer.c_str());
+  readConfigs();
+
+  if (wifiConfig.clrSpiffOnRst){
+    formatSpiff();
+    wifiConfig.clrSpiffOnRst = false;
+    saveConfig();
+  }
 
   initLog(); // Init debug log to file
 

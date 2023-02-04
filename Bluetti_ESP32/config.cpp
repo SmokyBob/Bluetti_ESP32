@@ -32,6 +32,7 @@ void readConfigs()
   
   wifiConfig.BtLogTime_Start = prf_config.getString("BtLogTime_Start", "");
   wifiConfig.BtLogTime_Stop = prf_config.getString("BtLogTime_Stop", "");
+  wifiConfig.clrSpiffOnRst = prf_config.getBool("clrSpiffOnRst", false);
 
   prf_config.end();
 }
@@ -61,6 +62,7 @@ void saveConfig()
 
   prf_config.putString("BtLogTime_Start", wifiConfig.BtLogTime_Start);
   prf_config.putString("BtLogTime_Stop", wifiConfig.BtLogTime_Stop);
+  prf_config.putBool("clrSpiffOnRst", wifiConfig.clrSpiffOnRst);
   
 
   prf_config.end();

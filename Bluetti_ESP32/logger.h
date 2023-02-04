@@ -14,6 +14,8 @@ extern void initLog();
 
 extern void clearLog();
 
+extern void formatSpiff();
+
 extern void writeLog(String message);
 
 extern void saveBTData(String message);

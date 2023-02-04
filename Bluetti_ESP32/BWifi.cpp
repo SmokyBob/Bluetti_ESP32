@@ -246,6 +246,11 @@ void config_HTML(bool paramsSaved = false, bool resetRequired = false)
   data = data + "<tr><td>Bluetti Data Log Auto Stop (HH:MM)  (empty=no stop):</td>" +
          "<td><input type='text' size=5 name='BtLogTime_Stop' value='" + wifiConfig.BtLogTime_Stop + "' /></td></tr>";
 
+
+  data = data + "<tr><td>&nbsp;</td></tr>";
+  data = data + "<tr><td>Clear All Logs and Reboot:</td>" +
+         "<td><input type='checkbox' name='clrSpiffOnRst' value='clrSpiffOnRstBool' " + ((wifiConfig.clrSpiffOnRst) ? "checked" : "") + +" /></td></tr>";
+
   // TODO: add other parameters accordingly
   data = data + "</table>" +
          "<input type='submit' value='Save'>" +
@@ -312,6 +317,12 @@ void config_POST()
   wifiConfig.useDbgFilelog = server.hasArg("useDbgFilelog");
   wifiConfig.BtLogTime_Start = server.arg("BtLogTime_Start");
   wifiConfig.BtLogTime_Stop = server.arg("BtLogTime_Stop");
+
+  if (server.hasArg("clrSpiffOnRst"))
+  {
+    wifiConfig.clrSpiffOnRst = true;
+    resetRequired = true;
+  }
 
   // TODO: manage other parameters accordingly
 

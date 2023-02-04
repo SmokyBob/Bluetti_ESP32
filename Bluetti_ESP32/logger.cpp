@@ -46,6 +46,10 @@ void clearLog()
   SPIFFS.remove("/debug_log.txt");
 }
 
+void formatSpiff(){
+  SPIFFS.format();
+}
+
 void writeLog(String message)
 {
   esp_log_write(ESP_LOG_DEBUG, "DBG", (getLocalTimeISO() + " " + message + "\n").c_str());

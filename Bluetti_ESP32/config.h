@@ -61,6 +61,7 @@ typedef struct
 
   // Just in case the board misbehave
   uint8_t forcedResetHRS = 0;
+  bool clrSpiffOnRst=false;
 
 } ESPBluettiSettings;
 
