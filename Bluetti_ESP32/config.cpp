@@ -17,7 +17,10 @@ void readConfigs()
 
   wifiConfig.salt = prf_config.getInt("salt", EEPROM_SALT);
   wifiConfig.bluetti_device_id = prf_config.getString("bluetti_id", "");
-  wifiConfig.APMode = prf_config.getBool("APMode", false);
+
+  wifiConfig.APMode = prf_config.getBool("APMode", true);
+  wifiConfig.ssid = prf_config.getString("ssid", "");
+  wifiConfig.password = prf_config.getString("password", "");
 
   wifiConfig.useIFTT = prf_config.getBool("useIFTT", false);
   wifiConfig.IFTT_Key = prf_config.getString("IFTT_Key", "");
@@ -29,7 +32,7 @@ void readConfigs()
   wifiConfig.homeRefreshS = prf_config.getShort("homeRefreshS", 0);
   wifiConfig.showDebugInfos = prf_config.getBool("showDebugInfos", false);
   wifiConfig.useDbgFilelog = prf_config.getBool("useDbgFilelog", false);
-  
+
   wifiConfig.BtLogTime_Start = prf_config.getString("BtLogTime_Start", "");
   wifiConfig.BtLogTime_Stop = prf_config.getString("BtLogTime_Stop", "");
   wifiConfig.clrSpiffOnRst = prf_config.getBool("clrSpiffOnRst", false);
@@ -48,6 +51,8 @@ void saveConfig()
   prf_config.putInt("salt", wifiConfig.salt);
   prf_config.putString("bluetti_id", wifiConfig.bluetti_device_id);
   prf_config.putBool("APMode", wifiConfig.APMode);
+  prf_config.putString("ssid", wifiConfig.ssid);
+  prf_config.putString("password", wifiConfig.password);
 
   prf_config.putBool("useIFTT", wifiConfig.useIFTT);
   prf_config.putString("IFTT_Key", wifiConfig.IFTT_Key);
@@ -63,7 +68,6 @@ void saveConfig()
   prf_config.putString("BtLogTime_Start", wifiConfig.BtLogTime_Start);
   prf_config.putString("BtLogTime_Stop", wifiConfig.BtLogTime_Stop);
   prf_config.putBool("clrSpiffOnRst", wifiConfig.clrSpiffOnRst);
-  
 
   prf_config.end();
 }

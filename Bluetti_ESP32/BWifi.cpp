@@ -1,29 +1,75 @@
 #include "BluettiConfig.h"
 #include "BWifi.h"
 #include "BTooth.h"
-#include <WiFiManager.h>
+// #include <WiFiManager.h>
 #include <ESPmDNS.h>
 #include "utils.h"
 #include <WebServer.h>
+#include <DNSServer.h>
 
 WebServer server(80);
 
+// Dns infos for captive portal
+DNSServer dnsServer;
+const byte DNS_PORT = 53;
+// The access points IP address and net mask
+// It uses the default Google DNS IP address 8.8.8.8 to capture all 
+// Android dns requests
+IPAddress apIP(8, 8, 8, 8);
+IPAddress netMsk(255, 255, 255, 0);
+
 void resetConfig()
 {
-  WiFiManager wifiManager;
-  wifiManager.resetSettings();
+  // WiFiManager wifiManager;
+  // wifiManager.resetSettings();
 
   ESPBluettiSettings defaults;
   wifiConfig = defaults;
   saveConfig();
 }
 
+bool doCaptivePortal = false;
+
+// Adapted from https://github.com/tzapu/WiFiManager/blob/master/WiFiManager.cpp
+boolean captivePortal()
+{
+#if DEBUG <= 4
+  Serial.println(F(" captive portal check"));
+#endif
+  if (!doCaptivePortal)
+    return false; // skip redirections, @todo maybe allow redirection even when no cp ? might be useful
+
+#if DEBUG <= 4
+  Serial.println(F("Captive portal enabled"));
+#endif
+  String serverLoc = server.client().localIP().toString();
+  if (server.client().localPort() != 80)
+    serverLoc += ":80";                               // add port if not default
+  bool doredirect = serverLoc != server.hostHeader(); // redirect if hostheader not server ip, prevent redirect loops
+  // doredirect = !isIp(server->hostHeader()) // old check
+
+#if DEBUG <= 4
+  Serial.print("doredirect: ");
+  Serial.println(doredirect);
+#endif
+
+  if (doredirect)
+  {
+    Serial.println(F("<- Request redirected to captive portal"));
+    server.sendHeader(F("Location"), (String)F("http://") + serverLoc, true); // @HTTPHEAD send redirect
+    server.send(302, "text/plain", "");                                       // Empty content inhibits Content-length header so we have to close the socket ourselves.
+    server.client().stop();                                                   // Stop is needed because we sent no content length
+    return true;
+  }
+  return false;
+}
+
 #pragma region Async Ws handlers
-
-
 
 void root_HTML()
 {
+  if (captivePortal())
+    return; // If captive portal redirect instead of displaying the page
 #if DEBUG <= 4
   Serial.print("handleRoot() running on core ");
   Serial.println(xPortGetCoreID());
@@ -116,6 +162,9 @@ void root_HTML()
 
 void notFound()
 {
+  if (captivePortal())
+    return; // If captive portal redirect instead of displaying the page
+
   String message = "File Not Found\n\n";
   message += "URI: ";
   message += server.uri();
@@ -211,11 +260,20 @@ void config_HTML(bool paramsSaved = false, bool resetRequired = false)
   data = data + "<a href='./resetConfig' target='_blank' style='color:red'>reset FULL configuration</a>";
   data = data + "<form action='/config' method='POST'>";
   data = data + "<table border='0'>";
+
   data = data + "<tr><td>Bluetti device id:</td>" +
          "<td><input type='text' size=40 name='bluetti_device_id' value='" + wifiConfig.bluetti_device_id + "' /></td>" +
          "<td><a href='./'>Home</a></td></tr>";
+
+  //TODO: scan for networks and let the user select the ssid
+  //https://github.com/tzapu/WiFiManager/blob/master/WiFiManager.cpp
+  // See getScanItemOut and releated functions (ex. WiFi_scanNetworks)
+  data = data + "<tr><td>&nbsp;</td></tr>";
   data = data + "<tr><td>Start in AP Mode:</td>" +
          "<td><input type='checkbox' name='APMode' value='APModeBool' " + ((wifiConfig.APMode) ? "checked" : "") + +" /></td></tr>";
+  data = data + "<tr><td>Wifi SSID:</td><td><input type='text' size='100' name='ssid' value='" + wifiConfig.ssid + "'></td></tr>";
+  data = data + "<tr><td>Wifi PWD:</td><td><input type='password' size='100' name='password' value='" + wifiConfig.password + "'></td></tr>";
+
   // IFTT Parameters
   // TODO: js or css to hide class showIFTT is useIFTT Unchecked
   data = data + "<tr><td>Use IFTT:</td>" +
@@ -245,7 +303,6 @@ void config_HTML(bool paramsSaved = false, bool resetRequired = false)
          "<td><input type='text' size=5 name='BtLogTime_Start' value='" + wifiConfig.BtLogTime_Start + "' /></td></tr>";
   data = data + "<tr><td>Bluetti Data Log Auto Stop (HH:MM)  (empty=no stop):</td>" +
          "<td><input type='text' size=5 name='BtLogTime_Stop' value='" + wifiConfig.BtLogTime_Stop + "' /></td></tr>";
-
 
   data = data + "<tr><td>&nbsp;</td></tr>";
   data = data + "<tr><td>Clear All Logs and Reboot:</td>" +
@@ -293,6 +350,20 @@ void config_POST()
       resetRequired = true;
     }
     wifiConfig.APMode = false;
+  }
+
+  char tmp1[100];
+  strcpy(tmp1, server.arg("ssid").c_str());
+  if (strcmp(tmp1, wifiConfig.ssid.c_str()) != 0)
+  {
+    wifiConfig.ssid = server.arg("ssid");
+    resetRequired = true;
+  }
+  strcpy(tmp1, server.arg("password").c_str());
+  if (strcmp(tmp1, wifiConfig.password.c_str()) != 0)
+  {
+    wifiConfig.password = server.arg("password");
+    resetRequired = true;
   }
 
   // IFTT (no restart required)
@@ -422,36 +493,44 @@ void setWebHandles()
 
 #pragma endregion Async Ws handlers
 
+const char *ssid = "solcia_FW";
+const char *password = "hackyourmind1";
+
 void wifiConnect(bool resetWifi)
 {
-  WiFiManager wifiManager;
 
   if (resetWifi)
   {
-    wifiManager.resetSettings();
     // Reset AP Mode
     readConfigs();
-    wifiConfig.APMode = false;
+    wifiConfig.APMode = true;
+    wifiConfig.ssid = "";
+    wifiConfig.password = "";
     saveConfig();
   }
 
-  if (!wifiConfig.APMode)
+  if (!wifiConfig.APMode && wifiConfig.ssid.length() > 0)
   {
-    wifiManager.setConfigPortalTimeout(180); // 180 sec timeout so that after power failure or restart it doesn't hang in portal mode
 
-    // Use configurations to connect to Wifi Network
-    bool result = wifiManager.autoConnect(DEVICE_NAME);
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(wifiConfig.ssid.c_str(), wifiConfig.password.c_str());
 
-    if (result == false)
-    {
-      // Restart and try again to connect to the wifi
-      ESP.restart();
-    }
+    unsigned long connectTimeout = millis();
     // Wait for connection
     while (WiFi.status() != WL_CONNECTED)
     {
       delay(500);
       Serial.print(".");
+      if ((millis() - connectTimeout) > ((WDT_TIMEOUT - 5) * 1000))
+      {
+        Serial.println("Wifi Not connected with ssid: " + wifiConfig.ssid + " ! Reset config");
+        writeLog("Wifi Not connected with ssid: " + wifiConfig.ssid + " ! Reset config");
+        wifiConfig.APMode = true;
+        wifiConfig.ssid = "";
+        wifiConfig.password = "";
+        saveConfig();
+        ESP.restart();
+      }
     }
     Serial.println("");
     Serial.println("IP address: ");
@@ -464,11 +543,18 @@ void wifiConnect(bool resetWifi)
   }
   else
   {
-    // Start AP MODE
+
+    //  Start AP MODE
+    //WiFi.softAPConfig(apIP, apIP, netMsk);
     WiFi.softAP(DEVICE_NAME);
     Serial.println("");
     Serial.println("IP address: ");
     Serial.println(WiFi.softAPIP());
+
+    doCaptivePortal = true;
+    /* Setup the DNS server redirecting all the domains to the apIP */
+    dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
+    dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
   }
 }
 
@@ -498,10 +584,16 @@ void initBWifi(bool resetWifi)
 
 void handleWebserver()
 {
-  if (runningSince.length() == 0)
+  if (doCaptivePortal)
+  {
+    // DNS
+    dnsServer.processNextRequest();
+  }
+
+  if (!wifiConfig.APMode && wifiConfig.ssid.length() > 0 && runningSince.length() == 0)
   {
     struct tm timeinfo;
-    if (!getLocalTime(&timeinfo, 15 * 1000))
+    if (!getLocalTime(&timeinfo, (WDT_TIMEOUT - 5) * 1000))
     {
       Serial.println("Failed to obtain time");
     }

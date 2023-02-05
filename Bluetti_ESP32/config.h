@@ -40,8 +40,11 @@ static int daylightOffset_sec = 3600;
 typedef struct
 {
   int salt = EEPROM_SALT;
+  
   String bluetti_device_id = "";
   bool APMode = false; // Start in AP Mode
+  String ssid = "";
+  String password = "";
   // IFTT Parameters
   bool useIFTT = false;       // Following parameters used (and shown) only if this is true
   String IFTT_Key = "";       // https://ifttt.com/maker_webhooks then click Documentation

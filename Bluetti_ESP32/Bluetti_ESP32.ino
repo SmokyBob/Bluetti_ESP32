@@ -20,7 +20,8 @@ void setup()
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer.c_str());
   readConfigs();
 
-  if (wifiConfig.clrSpiffOnRst){
+  if (wifiConfig.clrSpiffOnRst)
+  {
     formatSpiff();
     wifiConfig.clrSpiffOnRst = false;
     saveConfig();
@@ -31,7 +32,7 @@ void setup()
   initBWifi(false); // Init Wifi and WebServer
   writeLog("---------------------------");
   writeLog("Starting");
-  initBluetooth();
+  // initBluetooth();
 
   esp_task_wdt_init(WDT_TIMEOUT, true); // enable panic so ESP32 restarts
   esp_task_wdt_add(NULL);               // add current thread to WDT watch
@@ -81,7 +82,7 @@ void loop()
   }
 #endif
 
-  if (WiFi.status() != WL_CONNECTED)
+  if (!wifiConfig.APMode && wifiConfig.ssid.length() > 0 && WiFi.status() != WL_CONNECTED)
   {
     Serial.println("Wifi Not connected! Reconnecting");
     writeLog("Wifi Not connected! Reconnecting");
@@ -91,7 +92,7 @@ void loop()
   }
   else
   {
-    if ((millis() - serialTick) > (5 * 1000))
+    if ((millis() - serialTick) > ((WDT_TIMEOUT-10) * 1000))
     {
       if (esp_task_wdt_status(NULL) == ESP_ERR_NOT_FOUND)
       {
