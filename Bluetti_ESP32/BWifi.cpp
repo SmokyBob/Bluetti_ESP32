@@ -12,10 +12,6 @@ WebServer server(80);
 // Dns infos for captive portal
 DNSServer dnsServer;
 const byte DNS_PORT = 53;
-// The access points IP address and net mask
-// It uses the default Google DNS IP address 8.8.8.8 to capture all 
-// Android dns requests
-IPAddress apIP(8, 8, 8, 8);
 IPAddress netMsk(255, 255, 255, 0);
 
 void resetConfig()
@@ -62,6 +58,165 @@ boolean captivePortal()
     return true;
   }
   return false;
+}
+
+int _numNetworks = 0;                // init index for numnetworks wifiscans
+unsigned long _lastscan = 0;         // ms for timing wifi scans
+unsigned int _scancachetime = 30000; // ms cache time for preload scans
+boolean _asyncScan = false;          // perform wifi network scan async
+unsigned long _startscan = 0;        // ms for timing wifi scans
+boolean _autoforcerescan = false;    // automatically force rescan if scan networks is 0, ignoring cache
+
+bool WiFi_scanNetworks(bool force, bool async)
+{
+
+  // if 0 networks, rescan @note this was a kludge, now disabling to test real cause ( maybe wifi not init etc)
+  // enable only if preload failed?
+  if (_numNetworks == 0 && _autoforcerescan)
+  {
+    Serial.println("NO APs found forcing new scan");
+    force = true;
+  }
+
+  // if scan is empty or stale (last scantime > _scancachetime), this avoids fast reloading wifi page and constant scan delayed page loads appearing to freeze.
+  if (!_lastscan || (_lastscan > 0 && (millis() - _lastscan > _scancachetime)))
+  {
+    force = true;
+  }
+
+  if (force)
+  {
+    int8_t res;
+    _startscan = millis();
+    if (async && _asyncScan)
+    {
+#ifdef ESP8266
+#ifndef WM_NOASYNC // no async available < 2.4.0
+#ifdef WM_DEBUG_LEVEL
+      Serial.println(F("WiFi Scan ASYNC started"));
+#endif
+      using namespace std::placeholders; // for `_1`
+      WiFi.scanNetworksAsync(std::bind(&WiFiManager::WiFi_scanComplete, this, _1));
+#else
+      Serial.println(F("WiFi Scan SYNC started"));
+      res = WiFi.scanNetworks();
+#endif
+#else
+      res = WiFi.scanNetworks(true);
+#endif
+      return false;
+    }
+    else
+    {
+      Serial.println(F("WiFi Scan SYNC started"));
+      res = WiFi.scanNetworks();
+    }
+    if (res == WIFI_SCAN_FAILED)
+    {
+      Serial.println(F("[ERROR] scan failed"));
+    }
+    else if (res == WIFI_SCAN_RUNNING)
+    {
+      Serial.println("Wifi Scan running:");
+      while (WiFi.scanComplete() == WIFI_SCAN_RUNNING)
+      {
+        Serial.println(".");
+        delay(100);
+      }
+      _numNetworks = WiFi.scanComplete();
+    }
+    else if (res >= 0)
+      _numNetworks = res;
+    _lastscan = millis();
+
+    // Serial.println(F("WiFi Scan completed in " + (String)(_lastscan - _startscan) + " ms"));
+
+    return true;
+  }
+  else
+  {
+    // Serial.println(F("Scan is cached " + (String)(millis() - _lastscan) + " ms ago"));
+  }
+  return false;
+}
+
+// based on https://github.com/tzapu/WiFiManager/blob/master/WiFiManager.cpp
+String getScanItemOut()
+{
+  String rows;
+
+  // Scan for wifi networks
+  WiFi_scanNetworks(true, false);
+
+  int n = _numNetworks;
+  if (n == 0)
+  {
+    rows += "No networks found. Refresh to scan again."; // No Networks
+  }
+  else
+  {
+    // sort networks
+    int indices[n];
+    for (int i = 0; i < n; i++)
+    {
+      indices[i] = i;
+    }
+
+    // RSSI SORT
+    for (int i = 0; i < n; i++)
+    {
+      for (int j = i + 1; j < n; j++)
+      {
+        if (WiFi.RSSI(indices[j]) > WiFi.RSSI(indices[i]))
+        {
+          std::swap(indices[i], indices[j]);
+        }
+      }
+    }
+
+    // remove duplicates ( must be RSSI sorted )
+    String cssid;
+    for (int i = 0; i < n; i++)
+    {
+      if (indices[i] == -1)
+        continue;
+      cssid = WiFi.SSID(indices[i]);
+      for (int j = i + 1; j < n; j++)
+      {
+        if (cssid == WiFi.SSID(indices[j]))
+        {
+          indices[j] = -1; // set dup aps to index -1
+        }
+      }
+    }
+
+    // Base Row
+    String HTTP_ITEM_STR = "<tr><td colspan='3'><a href='#' onclick='document.getElementsByName(\"ssid\")[0].value=\"{V}\";' data-ssid='{V}'>{v}</a></td></tr>";
+
+    // build networks rows for display
+    for (int i = 0; i < n; i++)
+    {
+      if (indices[i] == -1)
+        continue; // skip dups
+
+      uint8_t enc_type = WiFi.encryptionType(indices[i]);
+
+      // if (_minimumQuality == -1 || _minimumQuality < rssiperc) {
+      String item = HTTP_ITEM_STR;
+      if (WiFi.SSID(indices[i]) == "")
+      {
+        // Serial.println(WiFi.BSSIDstr(indices[i]));
+        continue; // No idea why I am seeing these, lets just skip them for now
+      }
+      item.replace("{V}", htmlEntities(WiFi.SSID(indices[i]), false)); // ssid no encoding
+      item.replace("{v}", htmlEntities(WiFi.SSID(indices[i]), true));  // ssid no encoding
+      // if(tok_e) item.replace("{e}", encryptionTypeStr(enc_type));
+
+      rows += item;
+    }
+  }
+
+  return rows;
 }
 
 #pragma region Async Ws handlers
@@ -257,17 +412,18 @@ void config_HTML(bool paramsSaved = false, bool resetRequired = false)
            ((resetRequired) ? "Restart required (will be done in 2 second)" : "") +
            "</span><br/><br/>";
   }
-  data = data + "<a href='./resetConfig' target='_blank' style='color:red'>reset FULL configuration</a>";
+  data = data + "<b><a href='./'>Home</a></b>";
   data = data + "<form action='/config' method='POST'>";
   data = data + "<table border='0'>";
 
   data = data + "<tr><td>Bluetti device id:</td>" +
          "<td><input type='text' size=40 name='bluetti_device_id' value='" + wifiConfig.bluetti_device_id + "' /></td>" +
-         "<td><a href='./'>Home</a></td></tr>";
+         "<td><a href='./resetConfig' target='_blank' style='color:red'>reset FULL configuration</a></td></tr>";
 
-  //TODO: scan for networks and let the user select the ssid
-  //https://github.com/tzapu/WiFiManager/blob/master/WiFiManager.cpp
-  // See getScanItemOut and releated functions (ex. WiFi_scanNetworks)
+  // Scan Wifi Networks
+  data = data + "<tr><td>&nbsp;</td></tr>";
+  data = data + "<tr><td>Available Wifi Networs:</td><td><a href='./config'>Refresh</a></td></tr>";
+  data = data + getScanItemOut();
   data = data + "<tr><td>&nbsp;</td></tr>";
   data = data + "<tr><td>Start in AP Mode:</td>" +
          "<td><input type='checkbox' name='APMode' value='APModeBool' " + ((wifiConfig.APMode) ? "checked" : "") + +" /></td></tr>";
@@ -545,7 +701,6 @@ void wifiConnect(bool resetWifi)
   {
 
     //  Start AP MODE
-    //WiFi.softAPConfig(apIP, apIP, netMsk);
     WiFi.softAP(DEVICE_NAME);
     Serial.println("");
     Serial.println("IP address: ");

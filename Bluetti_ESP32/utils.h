@@ -17,5 +17,6 @@ extern String map_field_name(enum field_names f_name);
 extern String convertMilliSecondsToHHMMSS (unsigned long value);
 extern void copyArray(device_field_data_t* src, device_field_data_t* dst, int len);
 extern String getLocalTimeISO();
+extern String htmlEntities(String str, bool whitespace);
 
 #endif
