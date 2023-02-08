@@ -1,7 +1,6 @@
 #include "BluettiConfig.h"
 #include "BWifi.h"
 #include "BTooth.h"
-// #include <WiFiManager.h>
 #include <ESPmDNS.h>
 #include "utils.h"
 #include <WebServer.h>
@@ -12,13 +11,9 @@ WebServer server(80);
 // Dns infos for captive portal
 DNSServer dnsServer;
 const byte DNS_PORT = 53;
-IPAddress netMsk(255, 255, 255, 0);
 
 void resetConfig()
 {
-  // WiFiManager wifiManager;
-  // wifiManager.resetSettings();
-
   ESPBluettiSettings defaults;
   wifiConfig = defaults;
   saveConfig();
@@ -42,7 +37,6 @@ boolean captivePortal()
   if (server.client().localPort() != 80)
     serverLoc += ":80";                               // add port if not default
   bool doredirect = serverLoc != server.hostHeader(); // redirect if hostheader not server ip, prevent redirect loops
-  // doredirect = !isIp(server->hostHeader()) // old check
 
 #if DEBUG <= 4
   Serial.print("doredirect: ");
@@ -63,9 +57,9 @@ boolean captivePortal()
 int _numNetworks = 0;                // init index for numnetworks wifiscans
 unsigned long _lastscan = 0;         // ms for timing wifi scans
 unsigned int _scancachetime = 30000; // ms cache time for preload scans
-boolean _asyncScan = false;          // perform wifi network scan async
+const boolean _asyncScan = false;          // perform wifi network scan async
 unsigned long _startscan = 0;        // ms for timing wifi scans
-boolean _autoforcerescan = false;    // automatically force rescan if scan networks is 0, ignoring cache
+const boolean _autoforcerescan = false;    // automatically force rescan if scan networks is 0, ignoring cache
 
 bool WiFi_scanNetworks(bool force, bool async)
 {
@@ -191,7 +185,7 @@ String getScanItemOut()
     }
 
     // Base Row
-    String HTTP_ITEM_STR = "<tr><td colspan='3'><a href='#' onclick='document.getElementsByName(\"ssid\")[0].value=\"{V}\";' data-ssid='{V}'>{v}</a></td></tr>";
+    const String HTTP_ITEM_STR = "<tr><td colspan='3'><a href='#' onclick='document.getElementsByName(\"ssid\")[0].value=\"{V}\";' data-ssid='{V}'>{v}</a></td></tr>";
 
     // build networks rows for display
     for (int i = 0; i < n; i++)
@@ -282,6 +276,7 @@ void root_HTML()
 
     perc = float(ESP.getFreeHeap()) / float(ESP.getHeapSize());
     data = data + "<tr><td>Free Heap (Bytes):</td><td>" + ESP.getFreeHeap() + " of " + ESP.getHeapSize() + " (" + perc * 100 + " %)</td></tr>";
+    data = data + "<tr><td>Alloc Heap / Min Free Heap(Bytes):</td><td>" +  ESP.getMaxAllocHeap() + " / " + ESP.getMinFreeHeap() + "</td></tr>";
     data = data + "<tr><td><a href='./debugLog' target='_blank'>Debug Log</a></td>" +
            "<td><b><a href='./clearLog' target='_blank'>Clear Debug Log</a></b></td></tr>";
     if (wifiConfig._useBTFilelog)
@@ -648,9 +643,6 @@ void setWebHandles()
 }
 
 #pragma endregion Async Ws handlers
-
-const char *ssid = "solcia_FW";
-const char *password = "hackyourmind1";
 
 void wifiConnect(bool resetWifi)
 {
