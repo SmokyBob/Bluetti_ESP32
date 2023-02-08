@@ -223,6 +223,8 @@ void disconnectBT()
   // Mainly for testing
   pClient->disconnect();
   manualDisconnect = true;
+  connected = false;
+  doScan = false;
   writeLog("BT disconnected as requested");
 }
 
@@ -275,7 +277,7 @@ void handleBluetooth()
       {
         Serial.println(F("We have failed to connect to the server; there is nothin more we will do. nope, try again next loop (after 2 secs)"));
         writeLog("We have failed to connect to the server; there is nothin more we will do. nope, try again next loop (after 2 secs)");
-        delay(2*1000);
+        delay(2 * 1000);
       }
     }
 
