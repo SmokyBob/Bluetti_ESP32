@@ -92,7 +92,7 @@ void loop()
   }
   else
   {
-    if ((millis() - serialTick) > ((WDT_TIMEOUT-10) * 1000))
+    if ((millis() - serialTick) > ((WDT_TIMEOUT - 10) * 1000))
     {
       if (esp_task_wdt_status(NULL) == ESP_ERR_NOT_FOUND)
       {
@@ -142,7 +142,7 @@ void loop()
       mm = -1;
     }
 
-    if (currTime->tm_hour >= hh && currTime->tm_min >= mm)
+    if (currTime->tm_hour > hh || (currTime->tm_hour = hh && currTime->tm_min >= mm))
     {
       enableLog = true;
     }
@@ -163,7 +163,7 @@ void loop()
       mm = -1;
     }
 
-    if (currTime->tm_hour >= hh && currTime->tm_min >= mm)
+    if (currTime->tm_hour > hh || (currTime->tm_hour = hh && currTime->tm_min >= mm))
     {
       enableLog = false;
     }
