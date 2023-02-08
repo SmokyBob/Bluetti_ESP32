@@ -140,12 +140,7 @@ BLEClient *pClient;
 
 bool connectToServer()
 {
-  pinMode(2, OUTPUT);
-  for (int16_t i = 0; i++; i < 10)
-  {
-    digitalWrite(2, HIGH);
-    delay(100);
-  }
+  
   Serial.print(F("Forming a connection to "));
   Serial.println(bluettiDevice->getAddress().toString().c_str());
 
@@ -196,9 +191,9 @@ bool connectToServer()
   // Read the value of the characteristic.
   if (pRemoteWriteCharacteristic->canRead())
   {
-    std::string value = pRemoteWriteCharacteristic->readValue();
+    String value = pRemoteWriteCharacteristic->readValue().c_str();
     Serial.print(F("The characteristic value was: "));
-    Serial.println(value.c_str());
+    Serial.println(value);
   }
 
   if (pRemoteNotifyCharacteristic->canNotify())
