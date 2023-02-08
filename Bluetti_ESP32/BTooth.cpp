@@ -216,12 +216,13 @@ bool connectToServer()
   return true;
 }
 
+bool manualDisconnect = false;
+
 void disconnectBT()
 {
   // Mainly for testing
   pClient->disconnect();
-  connected = false; // to be sure
-  doScan = false;
+  manualDisconnect = true;
   writeLog("BT disconnected as requested");
 }
 
@@ -279,11 +280,12 @@ void handleBluetooth()
     }
 
     // Check only if the client is not pourposely disconnected
-    if (doScan || doConnect || connected)
+    if (!manualDisconnect)
     {
       if ((millis() - lastBTMessage) > (MAX_DISCONNECTED_TIME_UNTIL_REBOOT * 60000))
       {
         Serial.println(F("BT is disconnected over allowed limit, reboot device"));
+        writeLog("BT is disconnected over allowed limit, reboot device");
         ESP.restart();
       }
     }
