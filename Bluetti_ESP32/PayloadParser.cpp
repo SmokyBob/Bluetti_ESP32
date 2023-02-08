@@ -227,7 +227,7 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
         disconnectBT();
         delay(2 * 1000);
         writeLog("-------------------");
-        doConnect = true;
+        ESP.restart();
         return; // wait for next correct data
       }
 #if DEBUG <= 5
