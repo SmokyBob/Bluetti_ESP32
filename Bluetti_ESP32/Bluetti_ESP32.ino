@@ -142,11 +142,12 @@ void loop()
       mm = -1;
     }
 
-    if (currTime->tm_hour > hh || (currTime->tm_hour = hh && currTime->tm_min >= mm))
+    if (currTime->tm_hour > hh || (currTime->tm_hour == hh && currTime->tm_min >= mm))
     {
       enableLog = true;
     }
   }
+
   if (wifiConfig.BtLogTime_Stop.length() > 0)
   {
     uint8_t hh = -1;
@@ -163,7 +164,7 @@ void loop()
       mm = -1;
     }
 
-    if (currTime->tm_hour > hh || (currTime->tm_hour = hh && currTime->tm_min >= mm))
+    if (currTime->tm_hour > hh || (currTime->tm_hour == hh && currTime->tm_min >= mm))
     {
       enableLog = false;
     }
