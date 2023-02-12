@@ -54,12 +54,12 @@ boolean captivePortal()
   return false;
 }
 
-int _numNetworks = 0;                // init index for numnetworks wifiscans
-unsigned long _lastscan = 0;         // ms for timing wifi scans
-unsigned int _scancachetime = 30000; // ms cache time for preload scans
-const boolean _asyncScan = false;          // perform wifi network scan async
-unsigned long _startscan = 0;        // ms for timing wifi scans
-const boolean _autoforcerescan = false;    // automatically force rescan if scan networks is 0, ignoring cache
+int _numNetworks = 0;                   // init index for numnetworks wifiscans
+unsigned long _lastscan = 0;            // ms for timing wifi scans
+unsigned int _scancachetime = 30000;    // ms cache time for preload scans
+const boolean _asyncScan = false;       // perform wifi network scan async
+unsigned long _startscan = 0;           // ms for timing wifi scans
+const boolean _autoforcerescan = false; // automatically force rescan if scan networks is 0, ignoring cache
 
 bool WiFi_scanNetworks(bool force, bool async)
 {
@@ -276,7 +276,7 @@ void root_HTML()
 
     perc = float(ESP.getFreeHeap()) / float(ESP.getHeapSize());
     data = data + "<tr><td>Free Heap (Bytes):</td><td>" + ESP.getFreeHeap() + " of " + ESP.getHeapSize() + " (" + perc * 100 + " %)</td></tr>";
-    data = data + "<tr><td>Alloc Heap / Min Free Heap(Bytes):</td><td>" +  ESP.getMaxAllocHeap() + " / " + ESP.getMinFreeHeap() + "</td></tr>";
+    data = data + "<tr><td>Alloc Heap / Min Free Heap(Bytes):</td><td>" + ESP.getMaxAllocHeap() + " / " + ESP.getMinFreeHeap() + "</td></tr>";
     data = data + "<tr><td><a href='./debugLog' target='_blank'>Debug Log</a></td>" +
            "<td><b><a href='./clearLog' target='_blank'>Clear Debug Log</a></b></td></tr>";
     if (wifiConfig._useBTFilelog)
@@ -333,6 +333,7 @@ void notFound()
 void handleBTCommand(String topic, String payloadData)
 {
   String topic_path = topic;
+  topic_path.toLowerCase(); // in case we recieve DC_OUTPUT_ON instead of the expected dc_output_on
 
   Serial.print("Command arrived: ");
   Serial.print(topic);
@@ -350,6 +351,9 @@ void handleBTCommand(String topic, String payloadData)
     {
       command.page = bluetti_device_command[i].f_page;
       command.offset = bluetti_device_command[i].f_offset;
+
+      String current_name = map_field_name(bluetti_device_command[i].f_name);
+      strPayload = map_command_value(current_name, strPayload);
     }
   }
 
@@ -385,7 +389,6 @@ void command_HTML()
   {
     server.send(200, "text/plain", "Hello, POST: " + String(PARAM_TYPE) + " " + topic + " - " + String(PARAM_VAL) + " " + payload);
 
-    // TODO: Check if the topic is one for the commands (bluetti_device_command[])
     handleBTCommand(topic, payload);
   }
 }

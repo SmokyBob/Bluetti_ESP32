@@ -106,6 +106,73 @@ String map_field_name(enum field_names f_name)
   }
 }
 
+//There is no reflection to do string to enum
+//There are a couple of ways to work aroung it... but basically are just "case" statements
+//Wapped them in a fuction
+String map_command_value(String command_name, String value){
+  String toRet = value;
+  value.toUpperCase();
+  command_name.toUpperCase(); //force case indipendence
+
+  //on / off commands
+  if(command_name == "POWER_OFF" || command_name == "AC_OUTPUT_ON" || command_name == "DC_OUTPUT_ON" || command_name == "ECO_ON" || command_name == "POWER_LIFTING_ON") {
+    if (value == "ON") {
+      toRet = "1";
+    }
+    if (value == "OFF") {
+      toRet = "0";
+    }
+  }
+
+  //See DEVICE_EB3A enums
+  if(command_name == "LED_MODE"){
+    if (value == "LED_LOW") {
+      toRet = "1";
+    }
+    if (value == "LED_HIGH") {
+      toRet = "2";
+    }
+    if (value == "LED_SOS") {
+      toRet = "3";
+    }
+    if (value == "LED_OFF") {
+      toRet = "4";
+    }
+  }
+
+  //See DEVICE_EB3A enums
+  if(command_name == "ECO_SHUTDOWN"){
+    if (value == "ONE_HOUR") {
+      toRet = "1";
+    }
+    if (value == "TWO_HOURS") {
+      toRet = "2";
+    }
+    if (value == "THREE_HOURS") {
+      toRet = "3";
+    }
+    if (value == "FOUR_HOURS") {
+      toRet = "4";
+    }
+  }
+
+  //See DEVICE_EB3A enums
+  if(command_name == "CHARGING_MODE"){
+    if (value == "STANDARD") {
+      toRet = "0";
+    }
+    if (value == "SILENT") {
+      toRet = "1";
+    }
+    if (value == "TURBO") {
+      toRet = "2";
+    }
+  }
+
+
+  return toRet;
+}
+
 String convertMilliSecondsToHHMMSS(unsigned long value)
 {
 

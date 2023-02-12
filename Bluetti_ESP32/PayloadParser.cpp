@@ -135,16 +135,22 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
 
     for (int i = 0; i < sizeof(bluetti_device_state) / sizeof(device_field_data_t); i++)
     {
-      // filter fields not in range
-      if (bluetti_state_data[i].f_page == page &&
-          bluetti_state_data[i].f_offset >= offset &&
-          bluetti_state_data[i].f_offset <= (offset + length) / 2 &&
-          bluetti_state_data[i].f_offset + bluetti_state_data[i].f_size - 1 >= offset &&
-          bluetti_state_data[i].f_offset + bluetti_state_data[i].f_size - 1 <= (offset + length) / 2)
+
+      // filter fields not in range, reworked by AlexBurghardt
+      // the original code didn't work completely and skipped some fields to be published
+      if (
+          // it's the correct page
+          bluetti_device_state[i].f_page == page &&
+          // data offset greater than or equal to page offset
+          bluetti_device_state[i].f_offset >= offset &&
+          // local offset does not exeed the page length, likely not needed because of the last condition check
+          ((2 * ((int)bluetti_device_state[i].f_offset - (int)offset)) + HEADER_SIZE) <= length &&
+          // local offset + data size do not exeed the page length
+          ((2 * ((int)bluetti_device_state[i].f_offset - (int)offset + bluetti_device_state[i].f_size)) + HEADER_SIZE) <= length)
       {
 
-        uint8_t data_start = (2 * ((int)bluetti_state_data[i].f_offset - (int)offset)) + HEADER_SIZE;
-        uint8_t data_end = (data_start + 2 * bluetti_state_data[i].f_size);
+        uint8_t data_start = (2 * ((int)bluetti_device_state[i].f_offset - (int)offset)) + HEADER_SIZE;
+        uint8_t data_end = (data_start + 2 * bluetti_device_state[i].f_size);
         uint8_t data_payload_field[data_end - data_start];
 
         int p_index = 0;
@@ -199,6 +205,12 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
       }
     }
 
+    break;
+  case 0x06:
+    // AddtoMsgView(String(millis()) + ":skip 0x06 request! page: " + String(page) + " offset: " + offset);
+    break;
+  default:
+    // AddtoMsgView(String(millis()) + ":skip unknow request! page: " + String(page) + " offset: " + offset);
     break;
   }
   if (pData[1] == 0x03)
