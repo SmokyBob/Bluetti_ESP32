@@ -11,7 +11,7 @@ void setup()
 #if RELAISMODE == 1
   pinMode(RELAIS_PIN, OUTPUT);
 #if DEBUG <= 5
-  Serial.println("deactivate relais contact");
+  Serial.println(F("deactivate relais contact"));
 #endif
   digitalWrite(RELAIS_PIN, RELAIS_LOW);
 #endif
@@ -62,7 +62,7 @@ void loop()
 
   if (printHeap)
   {
-    Serial.println("------------------------ heap loop start        " + String(ESP.getHeapSize() - ESP.getFreeHeap()));
+    Serial.println(F("------------------------ heap loop start        " + String(ESP.getHeapSize() - ESP.getFreeHeap())));
   }
 #endif
 
@@ -70,7 +70,7 @@ void loop()
 #if logHeap > 0
   if (printHeap)
   {
-    Serial.println("------------------------ after BT handle        " + String(ESP.getHeapSize() - ESP.getFreeHeap()));
+    Serial.println(F("------------------------ after BT handle        " + String(ESP.getHeapSize() - ESP.getFreeHeap())));
   }
 #endif
 
@@ -78,13 +78,13 @@ void loop()
 #if logHeap > 0
   if (printHeap)
   {
-    Serial.println("------------------------ after WebServer handle " + String(ESP.getHeapSize() - ESP.getFreeHeap()));
+    Serial.println(F("------------------------ after WebServer handle " + String(ESP.getHeapSize() - ESP.getFreeHeap())));
   }
 #endif
 
   if (!wifiConfig.APMode && wifiConfig.ssid.length() > 0 && WiFi.status() != WL_CONNECTED)
   {
-    Serial.println("Wifi Not connected! Reconnecting");
+    Serial.println(F("Wifi Not connected! Reconnecting"));
     writeLog("Wifi Not connected! Reconnecting");
     esp_task_wdt_delete(NULL); // Remove watchdog
     delay(10000);              // Wait 10 secs before trying again

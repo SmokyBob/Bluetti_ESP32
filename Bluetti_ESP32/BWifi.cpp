@@ -5,6 +5,7 @@
 #include "utils.h"
 #include <WebServer.h>
 #include <DNSServer.h>
+#include "html.h"
 
 WebServer server(80);
 
@@ -39,7 +40,7 @@ boolean captivePortal()
   bool doredirect = serverLoc != server.hostHeader(); // redirect if hostheader not server ip, prevent redirect loops
 
 #if DEBUG <= 4
-  Serial.print("doredirect: ");
+  Serial.print(F("doredirect: "));
   Serial.println(doredirect);
 #endif
 
@@ -68,7 +69,7 @@ bool WiFi_scanNetworks(bool force, bool async)
   // enable only if preload failed?
   if (_numNetworks == 0 && _autoforcerescan)
   {
-    Serial.println("NO APs found forcing new scan");
+    Serial.println(F("NO APs found forcing new scan"));
     force = true;
   }
 
@@ -111,10 +112,10 @@ bool WiFi_scanNetworks(bool force, bool async)
     }
     else if (res == WIFI_SCAN_RUNNING)
     {
-      Serial.println("Wifi Scan running:");
+      Serial.println(F("Wifi Scan running:"));
       while (WiFi.scanComplete() == WIFI_SCAN_RUNNING)
       {
-        Serial.println(".");
+        Serial.println(F("."));
         delay(100);
       }
       _numNetworks = WiFi.scanComplete();
@@ -145,7 +146,7 @@ String getScanItemOut()
   int n = _numNetworks;
   if (n == 0)
   {
-    rows += "No networks found. Refresh to scan again."; // No Networks
+    rows += wifiNoNet_html; // No Networks
   }
   else
   {
@@ -185,7 +186,7 @@ String getScanItemOut()
     }
 
     // Base Row
-    const String HTTP_ITEM_STR = "<tr><td colspan='3'><a href='#' onclick='document.getElementsByName(\"ssid\")[0].value=\"{V}\";' data-ssid='{V}'>{v}</a></td></tr>";
+    const String HTTP_ITEM_STR = wifiRow_html;
 
     // build networks rows for display
     for (int i = 0; i < n; i++)
@@ -202,15 +203,157 @@ String getScanItemOut()
         // Serial.println(WiFi.BSSIDstr(indices[i]));
         continue; // No idea why I am seeing these, lets just skip them for now
       }
-      item.replace("{V}", htmlEntities(WiFi.SSID(indices[i]), false)); // ssid no encoding
-      item.replace("{v}", htmlEntities(WiFi.SSID(indices[i]), true));  // ssid no encoding
-      // if(tok_e) item.replace("{e}", encryptionTypeStr(enc_type));
+      item.replace(F("%CURR_SSID%"), htmlEntities(WiFi.SSID(indices[i]), false)); // ssid no encoding
 
       rows += item;
     }
   }
 
   return rows;
+}
+
+String processor(const String &var)
+{
+  String toRet = "";
+
+  if (var == F("TITLE"))
+  {
+    toRet = DEVICE_NAME;
+  }
+  else if (var == F("AUTO_REFRESH_H"))
+  {
+    if (wifiConfig.homeRefreshS > 0)
+    {
+      toRet = toRet + "<b>Page autorefresh every " + wifiConfig.homeRefreshS + " secs</b></br>";
+    }
+  }
+  else if (var == F("AUTO_REFRESH_B"))
+  {
+    if (wifiConfig.homeRefreshS > 0)
+    {
+      toRet = toRet + "<meta http-equiv='refresh' content='" + wifiConfig.homeRefreshS + "'>";
+    }
+  }
+  else if (var == F("HOST"))
+  {
+    toRet = WiFi.localIP().toString();
+  }
+  else if (var == F("SSID"))
+  {
+    toRet = WiFi.SSID();
+  }
+  else if (var == F("WiFiRSSI"))
+  {
+    toRet = WiFi.RSSI();
+  }
+  else if (var == F("MAC"))
+  {
+    toRet = WiFi.macAddress();
+  }
+  else if (var == F("UPTIME"))
+  {
+    toRet = convertMilliSecondsToHHMMSS(millis());
+  }
+  else if (var == F("RUNNING_SINCE"))
+  {
+    toRet = runningSince;
+  }
+  else if (var == F("UPTIME_D"))
+  {
+    toRet = millis() / 3600000 / 24;
+  }
+  else if (var == F("BLUETTI_ID"))
+  {
+    toRet = wifiConfig.bluetti_device_id;
+  }
+  else if (var == F("BT_FILE_LOG"))
+  {
+    if (wifiConfig._useBTFilelog)
+    {
+      toRet = bt_log_Link_html;
+    }
+  }
+  else if (var == F("B_BT_CONNECTED"))
+  {
+    toRet = (isBTconnected()) ? "checked" : "";
+  }
+  else if (var == F("BT_LAST_MEX_TIME"))
+  {
+    toRet = convertMilliSecondsToHHMMSS(getLastBTMessageTime());
+  }
+  else if (var == F("DEBUG_INFOS"))
+  {
+    if (wifiConfig.showDebugInfos)
+    {
+      toRet = debugInfos_html;
+      toRet.replace(F("%FREE_HEAP%"), String(ESP.getFreeHeap()));
+      toRet.replace(F("%TOTAL_HEAP%"), String(ESP.getHeapSize()));
+      toRet.replace(F("%PERC_HEAP%"), String((float(ESP.getFreeHeap()) / float(ESP.getHeapSize())) * 100));
+      toRet.replace(F("%MAX_ALLOC%"), String(ESP.getMaxAllocHeap()));
+      toRet.replace(F("%MIN_ALLOC%"), String(ESP.getMinFreeHeap()));
+      toRet.replace(F("%SPIFFS_USED%"), String(SPIFFS.usedBytes()));
+      toRet.replace(F("%SPIFFS_TOTAL%"), String(SPIFFS.totalBytes()));
+      toRet.replace(F("%SPIFFS_PERC%"), String((float(SPIFFS.usedBytes()) / float(SPIFFS.totalBytes())) * 100));
+    }
+  }
+  else if (var == F("DEVICE_STATES_HEADER"))
+  {
+    if (isBTconnected())
+    {
+      toRet = deviceState_header_html;
+    }
+  }
+  else if (var == F("DEVICE_STATES_ROWS"))
+  {
+    if (isBTconnected())
+    {
+      String tmpRow;
+      // Loop over the state field and add a row for each (with the relative data)
+      for (int i = 0; i < sizeof(bluetti_state_data) / sizeof(device_field_data_t); i++)
+      {
+        tmpRow = deviceState_row_html;
+        tmpRow.replace(F("%STATE_NAME%"), map_field_name(bluetti_state_data[i].f_name));
+        tmpRow.replace(F("%STATE_VALUE%"), bluetti_state_data[i].f_value);
+        toRet += tmpRow;
+      }
+    }
+  }
+  else if (var == F("B_AC_OUTPUT_ON"))
+  {
+    if (isBTconnected())
+    {
+      toRet = (bluetti_state_data[AC_OUTPUT_ON].f_value == "1") ? "checked" : "";
+    }
+  }
+
+  return toRet;
+}
+
+// Should help with the transition to AsyncWebServer
+String replacer(PGM_P content)
+{
+  String toRet = String(content);
+
+  toRet.replace(F("%TITLE%"), processor("TITLE"));
+  toRet.replace(F("%AUTO_REFRESH_H%"), processor("AUTO_REFRESH_H"));
+  toRet.replace(F("%AUTO_REFRESH_B%"), processor("AUTO_REFRESH_B"));
+  toRet.replace(F("%HOST%"), processor("HOST"));
+  toRet.replace(F("%SSID%"), processor("SSID"));
+  toRet.replace(F("%WiFiRSSI%"), processor("WiFiRSSI"));
+  toRet.replace(F("%MAC%"), processor("MAC"));
+  toRet.replace(F("%UPTIME%"), processor("UPTIME"));
+  toRet.replace(F("%RUNNING_SINCE%"), processor("RUNNING_SINCE"));
+  toRet.replace(F("%UPTIME_D%"), processor("UPTIME_D"));
+  toRet.replace(F("%BLUETTI_ID%"), processor("BLUETTI_ID"));
+  toRet.replace(F("%BT_FILE_LOG%"), processor("BT_FILE_LOG"));
+  toRet.replace(F("%B_BT_CONNECTED%"), processor("B_BT_CONNECTED"));
+  toRet.replace(F("%BT_LAST_MEX_TIME%"), processor("BT_LAST_MEX_TIME"));
+  toRet.replace(F("%DEBUG_INFOS%"), processor("DEBUG_INFOS"));
+  toRet.replace(F("%DEVICE_STATES_HEADER%"), processor("DEVICE_STATES_HEADER"));
+  toRet.replace(F("%DEVICE_STATES_ROWS%"), processor("DEVICE_STATES_ROWS"));
+  toRet.replace(F("%B_AC_OUTPUT_ON%"), processor("B_AC_OUTPUT_ON"));
+
+  return toRet;
 }
 
 #pragma region Async Ws handlers
@@ -220,94 +363,28 @@ void root_HTML()
   if (captivePortal())
     return; // If captive portal redirect instead of displaying the page
 #if DEBUG <= 4
-  Serial.print("handleRoot() running on core ");
+  Serial.print(F("handleRoot() running on core "));
   Serial.println(xPortGetCoreID());
 #endif
 
-  String data = "<HTML>";
-  data = data + "<HEAD>" +
-         "<TITLE>" + DEVICE_NAME + "</TITLE>";
-
-  if (wifiConfig.homeRefreshS > 0)
-  {
-    data = data + "<meta http-equiv='refresh' content='" + wifiConfig.homeRefreshS + "'>";
-  }
-  data = data + "</HEAD>";
-  data = data + "<BODY>";
-  if (wifiConfig.homeRefreshS > 0)
-  {
-    data = data + "<b>Page autorefresh every " + wifiConfig.homeRefreshS + " secs</b></br>";
-  }
-  data = data + "<table border='0'>";
-  data = data + "<tr><td>host:</td><td>" + WiFi.localIP().toString() + "</td>" +
-         "<td><a href='./rebootDevice'>Reboot this device</a></td></tr>";
-  data = data + "<tr><td>SSID:</td><td>" + WiFi.SSID() + "</td>" +
-         "<td><a href='./resetWifiConfig'>Reset WIFI config</a></td></tr>";
-  data = data + "<tr><td>WiFiRSSI:</td><td>" + (String)WiFi.RSSI() + "</td>" +
-         "<td><b><a href='./config'>Change Configuration</a></b></td></tr>";
-  data = data + "<tr><td>MAC:</td><td>" + WiFi.macAddress() + "</td></tr>";
-  data = data + "<tr><td>uptime :</td><td>" + convertMilliSecondsToHHMMSS(millis()) + "</td>" +
-         "<td>Running since: " + runningSince + "</td></tr>";
-  data = data + "<tr><td>uptime (d):</td><td>" + millis() / 3600000 / 24 + "</td></tr>";
-  data = data + "<tr><td>Bluetti device id:</td><td>" + wifiConfig.bluetti_device_id + "</td>";
-  if (wifiConfig._useBTFilelog)
-  {
-    data = data + "<td><a href='./dataLog' target='_blank'>Bluetti data Log</a></td>";
-  }
-  data = data + "</tr>";
-
-  data = data + "<tr><td>BT connected:</td><td><input type='checkbox' " + ((isBTconnected()) ? "checked" : "") + " onclick='return false;' /></td>" +
-         ((!isBTconnected()) ? "" : "<td><input type='button' onclick='location.href=\"./btDisconnect\"' value='Disconnect from BT'/></td>") + "</tr>";
-  data = data + "<tr><td>BT last message time:</td><td>" + convertMilliSecondsToHHMMSS(getLastBTMessageTime()) + "</td></tr>";
-
+  // logging
   float perc;
   perc = float(ESP.getFreeHeap()) / float(ESP.getHeapSize());
   String toLog = "";
   toLog = toLog + "Free Heap (Bytes): " + ESP.getFreeHeap() + " of " + ESP.getHeapSize() + " (" + perc * 100 + " %)";
   writeLog(toLog);
+
   toLog = "";
   perc = float(SPIFFS.usedBytes()) / float(SPIFFS.totalBytes());
   toLog = toLog + "SPIFFS Used (Bytes): " + SPIFFS.usedBytes() + " of " + SPIFFS.totalBytes() + " (" + perc * 100 + " %)";
   writeLog(toLog);
 
-  if (wifiConfig.showDebugInfos)
-  {
-    data = data + "<tr><td colspan='3'><hr></td></tr>";
+  toLog = "";
+  toLog = toLog + "Alloc Heap (Bytes): " + ESP.getMaxAllocHeap() + " Min Free Heap (Bytes):" + ESP.getMinFreeHeap();
+  writeLog(toLog);
 
-    perc = float(ESP.getFreeHeap()) / float(ESP.getHeapSize());
-    data = data + "<tr><td>Free Heap (Bytes):</td><td>" + ESP.getFreeHeap() + " of " + ESP.getHeapSize() + " (" + perc * 100 + " %)</td></tr>";
-    data = data + "<tr><td>Alloc Heap / Min Free Heap(Bytes):</td><td>" + ESP.getMaxAllocHeap() + " / " + ESP.getMinFreeHeap() + "</td></tr>";
-    data = data + "<tr><td><a href='./debugLog' target='_blank'>Debug Log</a></td>" +
-           "<td><b><a href='./clearLog' target='_blank'>Clear Debug Log</a></b></td></tr>";
-    if (wifiConfig._useBTFilelog)
-    {
-      data = data + "<tr><td><b><a href='./clearBtData' target='_blank'>Clear Bluetti Data Log</a></b></td></tr>";
-    }
-
-    perc = float(SPIFFS.usedBytes()) / float(SPIFFS.totalBytes());
-    data = data + "<tr><td>SPIFFS Used (Bytes):</td><td>" + SPIFFS.usedBytes() + " of " + SPIFFS.totalBytes() + " (" + perc * 100 + " %)</td></tr>";
-  }
-
-  data = data + "<tr><td colspan='3'><hr></td></tr>";
-  if (isBTconnected())
-  {
-
-    data = data + "<tr><td colspan='4'><b>Device States</b></td></tr>";
-    // Device states as last received
-    for (int i = 0; i < sizeof(bluetti_state_data) / sizeof(device_field_data_t); i++)
-    {
-#if DEBUG <= 4
-      Serial.println("-------------");
-      Serial.println(map_field_name(bluetti_state_data[i].f_name).c_str());
-      Serial.println(bluetti_state_data[i].f_value);
-      Serial.println("-------------");
-#endif
-      data = data + "<tr><td>" + map_field_name(bluetti_state_data[i].f_name).c_str() + ":</td><td>" + bluetti_state_data[i].f_value + "</td></tr>";
-    }
-  }
-  data = data + "</table></BODY></HTML>";
-
-  server.send(200, "text/html; charset=utf-8", data);
+  // Replace tags in the html template before sending it to the client
+  server.send(200, "text/html; charset=utf-8", replacer(index_html));
 }
 
 void notFound()
@@ -335,9 +412,9 @@ void handleBTCommand(String topic, String payloadData)
   String topic_path = topic;
   topic_path.toLowerCase(); // in case we recieve DC_OUTPUT_ON instead of the expected dc_output_on
 
-  Serial.print("Command arrived: ");
+  Serial.print(F("Command arrived: "));
   Serial.print(topic);
-  Serial.print(" Payload: ");
+  Serial.print(F(" Payload: "));
   String strPayload = payloadData;
   Serial.println(strPayload);
 
@@ -393,81 +470,138 @@ void command_HTML()
   }
 }
 
+bool b_paramsSaved = false;
+bool b_resetRequired = false;
+
+String processor_config(const String &var)
+{
+  String toRet = "";
+
+  if (var == F("TITLE"))
+  {
+    toRet = DEVICE_NAME;
+  }
+  else if (var == F("PARAM_SAVED"))
+  {
+    if (!b_paramsSaved)
+    {
+      toRet = F("display:none");
+    }
+  }
+  else if (var == F("RESTART_REQUIRED"))
+  {
+    if (!b_resetRequired)
+    {
+      toRet = F("display:none");
+    }
+  }
+  else if (var == F("BLUETTI_DEVICE_ID"))
+  {
+    toRet = wifiConfig.bluetti_device_id;
+  }
+  else if (var == F("WIFI_SCAN"))
+  {
+    toRet = getScanItemOut();
+  }
+  else if (var == F("B_APMODE"))
+  {
+    toRet = (wifiConfig.APMode) ? "checked" : "";
+  }
+  else if (var == F("SSID"))
+  {
+    toRet = wifiConfig.ssid;
+  }
+  else if (var == F("PASSWORD"))
+  {
+    toRet = wifiConfig.password;
+  }
+  else if (var == F("B_USE_IFTT"))
+  {
+    toRet = (wifiConfig.useIFTT) ? "checked" : "";
+  }
+  else if (var == F("IFTT_KEY"))
+  {
+    toRet = wifiConfig.IFTT_Key;
+  }
+  else if (var == F("IFTT_EVENT_LOW"))
+  {
+    toRet = wifiConfig.IFTT_Event_low;
+  }
+  else if (var == F("IFTT_LOW_BL"))
+  {
+    toRet = wifiConfig.IFTT_low_bl;
+  }
+  else if (var == F("IFTT_EVENT_HIGH"))
+  {
+    toRet = wifiConfig.IFTT_Event_high;
+  }
+  else if (var == F("IFTT_HIGH_BL"))
+  {
+    toRet = wifiConfig.IFTT_high_bl;
+  }
+  else if (var == F("HOME_REFRESH_S"))
+  {
+    toRet = wifiConfig.homeRefreshS;
+  }
+  else if (var == F("B_SHOW_DEBUG_INFOS"))
+  {
+    toRet = (wifiConfig.showDebugInfos) ? "checked" : "";
+  }
+  else if (var == F("B_USE_DBG_FILE_LOG"))
+  {
+    toRet = (wifiConfig.useDbgFilelog) ? "checked" : "";
+  }
+  else if (var == F("BTLOGTIME_START"))
+  {
+    toRet = wifiConfig.BtLogTime_Start;
+  }
+  else if (var == F("BTLOGTIME_STOP"))
+  {
+    toRet = wifiConfig.BtLogTime_Stop;
+  }
+  else if (var == F("B_CLRSPIFF_ON_RST"))
+  {
+    toRet = (wifiConfig.clrSpiffOnRst) ? "checked" : "";
+  }
+
+  return toRet;
+}
+
+// Should help with the transition to AsyncWebServer
+String replacer_config(PGM_P content)
+{
+  String toRet = String(content);
+
+  toRet.replace(F("%TITLE%"), processor_config("TITLE"));
+  toRet.replace(F("%PARAM_SAVED%"), processor_config("PARAM_SAVED"));
+  toRet.replace(F("%RESTART_REQUIRED%"), processor_config("RESTART_REQUIRED"));
+  toRet.replace(F("%BLUETTI_DEVICE_ID%"), processor_config("BLUETTI_DEVICE_ID"));
+  toRet.replace(F("%WIFI_SCAN%"), processor_config("WIFI_SCAN"));
+  toRet.replace(F("%B_APMODE%"), processor_config("B_APMODE"));
+  toRet.replace(F("%SSID%"), processor_config("SSID"));
+  toRet.replace(F("%PASSWORD%"), processor_config("PASSWORD"));
+  toRet.replace(F("%B_USE_IFTT%"), processor_config("B_USE_IFTT"));
+  toRet.replace(F("%IFTT_KEY%"), processor_config("IFTT_KEY"));
+  toRet.replace(F("%IFTT_EVENT_LOW%"), processor_config("IFTT_EVENT_LOW"));
+  toRet.replace(F("%IFTT_LOW_BL%"), processor_config("IFTT_LOW_BL"));
+  toRet.replace(F("%IFTT_EVENT_HIGH%"), processor_config("IFTT_EVENT_HIGH"));
+  toRet.replace(F("%IFTT_HIGH_BL%"), processor_config("IFTT_HIGH_BL"));
+  toRet.replace(F("%HOME_REFRESH_S%"), processor_config("HOME_REFRESH_S"));
+  toRet.replace(F("%B_SHOW_DEBUG_INFOS%"), processor_config("B_SHOW_DEBUG_INFOS"));
+  toRet.replace(F("%B_USE_DBG_FILE_LOG%"), processor_config("B_USE_DBG_FILE_LOG"));
+  toRet.replace(F("%BTLOGTIME_START%"), processor_config("BTLOGTIME_START"));
+  toRet.replace(F("%BTLOGTIME_STOP%"), processor_config("BTLOGTIME_STOP"));
+  toRet.replace(F("%B_CLRSPIFF_ON_RST%"), processor_config("B_CLRSPIFF_ON_RST"));
+
+  return toRet;
+}
+
 void config_HTML(bool paramsSaved = false, bool resetRequired = false)
 {
-  // html to edit ESPBluettiSettings values
-  String data = "<HTML>";
-  data = data + "<HEAD>" +
-         "<TITLE>" + DEVICE_NAME + " Config</TITLE>" +
-         "</HEAD>";
-  data = data + "<BODY>";
-  if (paramsSaved)
-  {
-    if (resetRequired)
-      data = data + "<script>setTimeout(function() { location.href = './'; }, 2000);</script>";
+  b_paramsSaved = paramsSaved;
+  b_resetRequired = resetRequired;
 
-    data = data + "<span style='font-weight:bold;color:red'>Configuration Saved." +
-           ((resetRequired) ? "Restart required (will be done in 2 second)" : "") +
-           "</span><br/><br/>";
-  }
-  data = data + "<b><a href='./'>Home</a></b>";
-  data = data + "<form action='/config' method='POST'>";
-  data = data + "<table border='0'>";
-
-  data = data + "<tr><td>Bluetti device id:</td>" +
-         "<td><input type='text' size=40 name='bluetti_device_id' value='" + wifiConfig.bluetti_device_id + "' /></td>" +
-         "<td><a href='./resetConfig' target='_blank' style='color:red'>reset FULL configuration</a></td></tr>";
-
-  // Scan Wifi Networks
-  data = data + "<tr><td>&nbsp;</td></tr>";
-  data = data + "<tr><td>Available Wifi Networs:</td><td><a href='./config'>Refresh</a></td></tr>";
-  data = data + getScanItemOut();
-  data = data + "<tr><td>&nbsp;</td></tr>";
-  data = data + "<tr><td>Start in AP Mode:</td>" +
-         "<td><input type='checkbox' name='APMode' value='APModeBool' " + ((wifiConfig.APMode) ? "checked" : "") + +" /></td></tr>";
-  data = data + "<tr><td>Wifi SSID:</td><td><input type='text' size='100' name='ssid' value='" + wifiConfig.ssid + "'></td></tr>";
-  data = data + "<tr><td>Wifi PWD:</td><td><input type='password' size='100' name='password' value='" + wifiConfig.password + "'></td></tr>";
-
-  // IFTT Parameters
-  // TODO: js or css to hide class showIFTT is useIFTT Unchecked
-  data = data + "<tr><td>Use IFTT:</td>" +
-         "<td><input type='checkbox' name='useIFTT' value='useIFTTBool' " + ((wifiConfig.useIFTT) ? "checked" : "") + +" /></td></tr>";
-  data = data + "<tr class'showIFTT'><td>IFTT Key:</td>" +
-         "<td><input type='text' size=25 name='IFTT_Key' value='" + wifiConfig.IFTT_Key + "' /></td></tr>";
-  data = data + "<tr class'showIFTT'><td>IFTT Event - Low Battery (empty to not trigger the event):</td>" +
-         "<td><input type='text' size=25 name='IFTT_Event_low' value='" + wifiConfig.IFTT_Event_low + "' /></td></tr>";
-  data = data + "<tr class'showIFTT'><td>IFTT Low Battery percentage:</td>" +
-         "<td><input type='number' placeholder='1.0' step='1' min='0' max='100' name='IFTT_low_bl' value='" + wifiConfig.IFTT_low_bl + "' /></td></tr>";
-
-  data = data + "<tr class'showIFTT'><td>IFTT Event - High Battery (empty to not trigger the event):</td>" +
-         "<td><input type='text' size=25 name='IFTT_Event_high' value='" + wifiConfig.IFTT_Event_high + "' /></td></tr>";
-  data = data + "<tr class'showIFTT'><td>IFTT high Battery percentage:</td>" +
-         "<td><input type='number' placeholder='1.0' step='1' min='0' max='100' name='IFTT_high_bl' value='" + wifiConfig.IFTT_high_bl + "' /></td></tr>";
-
-  data = data + "<tr><td>&nbsp;</td></tr>";
-  data = data + "<tr><td>Home Page Auto Refresh (sec, if 0 = No AutoRefresh):</td>" +
-         "<td><input type='number' placeholder='1.0' step='1' min='0' max='3600' name='homeRefreshS' value='" + wifiConfig.homeRefreshS + "' /></td></tr>";
-  data = data + "<tr><td>Show Debug Infos (FreeHeap, debugLog Link, etc...):</td>" +
-         "<td><input type='checkbox' name='showDebugInfos' value='showDebugInfosBool' " + ((wifiConfig.showDebugInfos) ? "checked" : "") + +" /></td></tr>";
-  data = data + "<tr><td>Enable Debug logging to File:</td>" +
-         "<td><input type='checkbox' name='useDbgFilelog' value='useDbgFilelogBool' " + ((wifiConfig.useDbgFilelog) ? "checked" : "") + +" /></td></tr>";
-
-  data = data + "<tr><td>&nbsp;</td></tr>";
-  data = data + "<tr><td>Bluetti Data Log Auto Start (HH:MM) (empty=no start):</td>" +
-         "<td><input type='text' size=5 name='BtLogTime_Start' value='" + wifiConfig.BtLogTime_Start + "' /></td></tr>";
-  data = data + "<tr><td>Bluetti Data Log Auto Stop (HH:MM)  (empty=no stop):</td>" +
-         "<td><input type='text' size=5 name='BtLogTime_Stop' value='" + wifiConfig.BtLogTime_Stop + "' /></td></tr>";
-
-  data = data + "<tr><td>&nbsp;</td></tr>";
-  data = data + "<tr><td>Clear All Logs and Reboot:</td>" +
-         "<td><input type='checkbox' name='clrSpiffOnRst' value='clrSpiffOnRstBool' " + ((wifiConfig.clrSpiffOnRst) ? "checked" : "") + +" /></td></tr>";
-
-  // TODO: add other parameters accordingly
-  data = data + "</table>" +
-         "<input type='submit' value='Save'>" +
-         "</form></BODY></HTML>";
-
-  server.send(200, "text/html; charset=utf-8", data);
+  server.send(200, "text/html; charset=utf-8", replacer_config(config_html));
 
   if (resetRequired)
   {
@@ -506,7 +640,7 @@ void config_POST()
     wifiConfig.APMode = false;
   }
 
-  char tmp1[100];
+  char tmp1[50];
   strcpy(tmp1, server.arg("ssid").c_str());
   if (strcmp(tmp1, wifiConfig.ssid.c_str()) != 0)
   {
@@ -548,8 +682,6 @@ void config_POST()
     wifiConfig.clrSpiffOnRst = true;
     resetRequired = true;
   }
-
-  // TODO: manage other parameters accordingly
 
   // Save configuration to Eprom
   saveConfig();
@@ -671,7 +803,7 @@ void wifiConnect(bool resetWifi)
     while (WiFi.status() != WL_CONNECTED)
     {
       delay(500);
-      Serial.print(".");
+      Serial.print(F("."));
       if ((millis() - connectTimeout) > ((WDT_TIMEOUT - 5) * 1000))
       {
         Serial.println("Wifi Not connected with ssid: " + wifiConfig.ssid + " ! Reset config");
@@ -683,13 +815,13 @@ void wifiConnect(bool resetWifi)
         ESP.restart();
       }
     }
-    Serial.println("");
-    Serial.println("IP address: ");
+    Serial.println(F(""));
+    Serial.println(F("IP address: "));
     Serial.println(WiFi.localIP());
 
     if (MDNS.begin(DEVICE_NAME))
     {
-      Serial.println("MDNS responder started");
+      Serial.println(F("MDNS responder started"));
     }
   }
   else
@@ -697,8 +829,8 @@ void wifiConnect(bool resetWifi)
 
     //  Start AP MODE
     WiFi.softAP(DEVICE_NAME);
-    Serial.println("");
-    Serial.println("IP address: ");
+    Serial.println(F(""));
+    Serial.println(F("IP address: "));
     Serial.println(WiFi.softAPIP());
 
     doCaptivePortal = true;
@@ -715,7 +847,7 @@ void initBWifi(bool resetWifi)
 
   if (wifiConfig.salt != EEPROM_SALT)
   {
-    Serial.println("Invalid settings in EEPROM, trying with defaults");
+    Serial.println(F("Invalid settings in EEPROM, trying with defaults"));
     ESPBluettiSettings defaults;
     wifiConfig = defaults;
   }
@@ -724,9 +856,9 @@ void initBWifi(bool resetWifi)
 
   setWebHandles();
 
-  Serial.println("HTTP server started");
+  Serial.println(F("HTTP server started"));
   writeLog("HTTP server started");
-  Serial.print("Bluetti Device id to search for: ");
+  Serial.print(F("Bluetti Device id to search for: "));
   Serial.println(wifiConfig.bluetti_device_id);
   // Init Array
   copyArray(bluetti_device_state, bluetti_state_data, sizeof(bluetti_device_state) / sizeof(device_field_data_t));
@@ -745,7 +877,7 @@ void handleWebserver()
     struct tm timeinfo;
     if (!getLocalTime(&timeinfo, (WDT_TIMEOUT - 5) * 1000))
     {
-      Serial.println("Failed to obtain time");
+      Serial.println(F("Failed to obtain time"));
     }
     else
     {

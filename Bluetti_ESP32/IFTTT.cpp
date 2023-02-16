@@ -41,7 +41,7 @@ void makeIFTTTRequest(String event)
     // Send the message only after some time
     if (curr_millis == 0 || ((millis() - curr_millis) > curr_wait))
     {
-      Serial.print("Connecting to ");
+      Serial.print(F("Connecting to "));
       Serial.print(IFTTT_Server);
 
       WiFiClient reqClient;
@@ -50,14 +50,14 @@ void makeIFTTTRequest(String event)
       while (!!!reqClient.connect(IFTTT_Server, 80) && (retries-- > 0))
       {
 #if DEBUG <= 5
-        Serial.print(".");
+        Serial.print(F("."));
 #endif
         retries--;
       }
 
       if (!!!reqClient.connected())
       {
-        Serial.println("Failed to connect...");
+        Serial.println(F("Failed to connect..."));
       }
       else
       {
@@ -87,7 +87,7 @@ void makeIFTTTRequest(String event)
           }
         }
 #if DEBUG <= 5
-        Serial.print("Request resource: ");
+        Serial.print(F("Request resource: "));
         Serial.println(currAddr);
 #endif
         if (currAddr.length() > 0)
@@ -98,15 +98,11 @@ void makeIFTTTRequest(String event)
           // String jsonObject = String("{\"value1\":\"") + bme.readTemperature() + "\",\"value2\":\"" + (bme.readPressure()/100.0F)
           //                     + "\",\"value3\":\"" + bme.readHumidity() + "\"}";
 
-          // Comment the previous line and uncomment the next line to publish temperature readings in Fahrenheit
-          /*String jsonObject = String("{\"value1\":\"") + (1.8 * bme.readTemperature() + 32) + "\",\"value2\":\""
-                              + (bme.readPressure()/100.0F) + "\",\"value3\":\"" + bme.readHumidity() + "\"}";*/
-
           reqClient.println(String("Host: ") + IFTTT_Server);
-          reqClient.println("Connection: close");
+          reqClient.println(F("Connection: close"));
           reqClient.println();
-          // reqClient.println("Connection: close\r\nContent-Type: application/json");
-          // reqClient.print("Content-Length: ");
+          // reqClient.println(F("Connection: close\r\nContent-Type: application/json"));
+          // reqClient.print(F("Content-Length: "));
           // reqClient.println(jsonObject.length());
 
           // reqClient.println(jsonObject);
@@ -120,7 +116,7 @@ void makeIFTTTRequest(String event)
 
           if (!!!reqClient.available())
           {
-            Serial.println("No response...");
+            Serial.println(F("No response..."));
           }
 
 #if DEBUG <= 5
@@ -128,7 +124,7 @@ void makeIFTTTRequest(String event)
           {
             Serial.write(reqClient.read());
           }
-          Serial.println("\nClosing connection");
+          Serial.println(F("\nClosing connection"));
 #endif
 
           reqClient.stop();

@@ -10,7 +10,7 @@ void readConfigs()
 {
 
 #if DEBUG < 5
-  Serial.println("Loading Values from Preferences");
+  Serial.println(F("Loading Values from Preferences"));
 #endif
 
   prf_config.begin("bluetti_esp32", false);
@@ -44,7 +44,7 @@ void saveConfig()
 {
 
 #if DEBUG < 5
-  Serial.println("Saving Values to Preferences");
+  Serial.println(F("Saving Values to Preferences"));
 #endif
   prf_config.begin("bluetti_esp32", false);
 

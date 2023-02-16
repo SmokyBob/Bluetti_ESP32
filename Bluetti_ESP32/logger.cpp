@@ -13,7 +13,7 @@ int vprintf_into_spiffs(const char *szFormat, va_list args)
     // output is now in buffer. write to file.
     if (ret >= 0)
     {
-      File spiffsLogFile = SPIFFS.open("/debug_log.txt", FILE_APPEND);
+      File spiffsLogFile = SPIFFS.open(F("/debug_log.txt"), FILE_APPEND);
       // debug output
       // printf("[Writing to SPIFFS] %.*s", ret, log_print_buffer);
       spiffsLogFile.write((uint8_t *)log_print_buffer, (size_t)ret);
@@ -29,7 +29,7 @@ void initLog()
 {
   if (!SPIFFS.begin(true))
   {
-    Serial.println("An Error has occurred while mounting SPIFFS");
+    Serial.println(F("An Error has occurred while mounting SPIFFS"));
     return;
   }
 
@@ -43,7 +43,7 @@ void initLog()
 void clearLog()
 {
   // Remove the log file so that a new one will be creates the next time a log is stored
-  SPIFFS.remove("/debug_log.txt");
+  SPIFFS.remove(F("/debug_log.txt"));
 }
 
 void formatSpiff(){
@@ -67,7 +67,7 @@ void saveBTData(String message)
     // output is now in buffer. write to file.
     if (ret >= 0)
     {
-      File spiffsBTDataFile = SPIFFS.open("/bluetti_data.json", FILE_APPEND);
+      File spiffsBTDataFile = SPIFFS.open(F("/bluetti_data.json"), FILE_APPEND);
       // debug output
       // printf("[Writing to SPIFFS] %.*s", ret, log_bt_data);
       spiffsBTDataFile.write((uint8_t *)log_bt_data, (size_t)ret);
@@ -81,5 +81,5 @@ void saveBTData(String message)
 void clearBtData()
 {
   // Remove the log file so that a new one will be creates the next time a log is stored
-  SPIFFS.remove("/bluetti_data.json");
+  SPIFFS.remove(F("/bluetti_data.json"));
 }

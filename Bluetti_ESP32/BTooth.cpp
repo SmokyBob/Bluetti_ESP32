@@ -31,10 +31,10 @@ class MyClientCallback : public BLEClientCallbacks
   void onDisconnect(BLEClient *pclient)
   {
     connected = false;
-    Serial.println("onDisconnect");
+    Serial.println(F("onDisconnect"));
 #if RELAISMODE == 1
 #if DEBUG <= 5
-    Serial.println("deactivate relais contact");
+    Serial.println(F("deactivate relais contact"));
 #endif
     digitalWrite(RELAIS_PIN, RELAIS_LOW);
 #endif
@@ -52,7 +52,7 @@ class BluettiAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks
   void onResult(BLEAdvertisedDevice advertisedDevice)
   {
     Serial.print(F("BLE Advertised Device found: "));
-    Serial.println(advertisedDevice.toString().c_str());
+    Serial.println(F(advertisedDevice.toString().c_str()));
 
     // We have found a device, let us now see if it contains the service we are looking for.
     if (advertisedDevice.haveServiceUUID() && advertisedDevice.isAdvertisingService(serviceUUID) && advertisedDevice.getName().compare(settings.bluetti_device_id.c_str()))
@@ -77,7 +77,7 @@ void initBluetooth()
 {
   settings = wifiConfig;
 #if DEBUG <= 5
-  Serial.print("settings.bluetti_device_id.length() = ");
+  Serial.print(F("settings.bluetti_device_id.length() = "));
   Serial.println(settings.bluetti_device_id.length());
 #endif
 
@@ -105,7 +105,7 @@ static void notifyCallback(
 {
 
 #if DEBUG <= 4
-  Serial.println("F01 - Write Response");
+  Serial.println(F("F01 - Write Response"));
   /* pData Debug... */
   for (int i = 1; i <= length; i++)
   {
@@ -114,7 +114,7 @@ static void notifyCallback(
 
     if (i % 2 == 0)
     {
-      Serial.print(" ");
+      Serial.print(F(" "));
     }
 
     if (i % 16 == 0)
@@ -130,7 +130,7 @@ static void notifyCallback(
   {
     parse_bluetooth_data(command_handle.page, command_handle.offset, pData, length);
 #if DEBUG <= 4
-    Serial.print("BT notifyCallback() running on core ");
+    Serial.print(F("BT notifyCallback() running on core "));
     Serial.println(xPortGetCoreID());
 #endif
   }
@@ -191,9 +191,8 @@ bool connectToServer()
   // Read the value of the characteristic.
   if (pRemoteWriteCharacteristic->canRead())
   {
-    String value = pRemoteWriteCharacteristic->readValue().c_str();
     Serial.print(F("The characteristic value was: "));
-    Serial.println(value);
+    Serial.println(pRemoteWriteCharacteristic->readValue().c_str());
   }
 
   if (pRemoteNotifyCharacteristic->canNotify())
@@ -203,7 +202,7 @@ bool connectToServer()
   writeLog("Connected to the Bluetti Device");
 #if RELAISMODE == 1
 #if DEBUG <= 5
-  Serial.println("activate relais contact");
+  Serial.println(F("activate relais contact"));
 #endif
   digitalWrite(RELAIS_PIN, RELAIS_HIGH);
 #endif
@@ -231,18 +230,18 @@ void handleBTCommandQueue()
   {
 
 #if DEBUG <= 5
-    Serial.print("Write Request FF02 - Value: ");
+    Serial.print(F("Write Request FF02 - Value: "));
 
     for (int i = 0; i < 8; i++)
     {
       if (i % 2 == 0)
       {
-        Serial.print(" ");
+        Serial.print(F(" "));
       };
       Serial.printf("%02x", ((uint8_t *)&command)[i]);
     }
 
-    Serial.println("");
+    Serial.println(F(""));
 #endif
     pRemoteWriteCharacteristic->writeValue((uint8_t *)&command, sizeof(command), true);
   };

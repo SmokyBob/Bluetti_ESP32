@@ -129,7 +129,6 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
   switch (pData[1])
   {
   // range request
-  // TODO: manage other device params / states
   // device_state
   case 0x03:
 
@@ -200,7 +199,7 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
 #if DEBUG <= 4
         Serial.println(map_field_name(bluetti_state_data[i].f_name).c_str());
         Serial.println(bluetti_state_data[i].f_value);
-        Serial.println("----------------------");
+        Serial.println(F("----------------------"));
 #endif
       }
     }
@@ -217,7 +216,7 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
   {
 // New data received
 #if DEBUG <= 4
-    Serial.println("New data received");
+    Serial.println(F("New data received"));
 #endif
 
     curr_TOTAL_BATTERY_PERCENT = bluetti_state_data[TOTAL_BATTERY_PERCENT].f_value.toInt();
@@ -227,8 +226,8 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
     if (!(curr_TOTAL_BATTERY_PERCENT == 0 && curr_AC_INPUT_POWER == 0))
     {
 #if DEBUG <= 4
-      Serial.println("TOTAL_BATTERY_PERCENT: " + bluetti_state_data[TOTAL_BATTERY_PERCENT].f_value);
-      Serial.println("AC_INPUT_POWER: " + bluetti_state_data[AC_INPUT_POWER].f_value);
+      Serial.println(F("TOTAL_BATTERY_PERCENT: ") + bluetti_state_data[TOTAL_BATTERY_PERCENT].f_value);
+      Serial.println(F("AC_INPUT_POWER: ") + bluetti_state_data[AC_INPUT_POWER].f_value);
 #endif
       // check if the connected device id is still the requested
       if (bluetti_state_data[DEVICE_TYPE].f_value + bluetti_state_data[SERIAL_NUMBER].f_value != wifiConfig.bluetti_device_id)
@@ -281,8 +280,8 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
   }
 
 #if DEBUG <= 4
-  Serial.print("parse_bluetooth_data() running on core ");
+  Serial.print(F("parse_bluetooth_data() running on core "));
   Serial.println(xPortGetCoreID());
-  Serial.println("parse_bluetooth_data() pData[1] =" + String(pData[1]));
+  Serial.println(F("parse_bluetooth_data() pData[1] =") + String(pData[1]));
 #endif
 }
