@@ -1,5 +1,7 @@
 #include "IFTTT.h"
 #include "config.h"
+#ifdef IFTTT
+
 #ifdef ESP32
 #include <WiFi.h>
 #else
@@ -142,3 +144,4 @@ void makeIFTTTRequest(String event)
     }
   }
 }
+#endif

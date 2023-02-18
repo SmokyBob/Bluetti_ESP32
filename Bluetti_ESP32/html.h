@@ -1,4 +1,5 @@
 #include "Arduino.h"
+#include "config.h"
 
 const char index_html[] PROGMEM = R"rawliteral(
 <html>
@@ -81,7 +82,7 @@ const char index_html[] PROGMEM = R"rawliteral(
 
 <body>
   %AUTO_REFRESH_B%
-  <table border="0" style="width:100%">
+  <table border="0" style="width:100%;max-width:800px">
     <tbody>
       <tr>
         <td>host:</td>
@@ -229,7 +230,7 @@ const char config_html[] PROGMEM = R"rawliteral(
     <span style='font-weight:bold;color:red;%PARAM_SAVED%'>Configuration Saved.
       <span id='restartRequired' style="%RESTART_REQUIRED%">Restart required (will be done in 2 second)</span>
     </span><br/><br/>
-    <table border="0" style="width:100%">
+    <table border="0" style="width:100%;max-width:800px">
       <tbody>
         <tr>
           <td>Bluetti device id:</td>
@@ -259,30 +260,7 @@ const char config_html[] PROGMEM = R"rawliteral(
           <td>Wifi PWD:</td>
           <td><input type="password" size="50" name="password" value="%PASSWORD%"></td>
         </tr>
-        <tr>
-          <td>Use IFTT:</td>
-          <td><input type="checkbox" name="useIFTT" value="useIFTTBool" %B_USE_IFTT%></td>
-        </tr>
-        <tr class='showiftt'>
-          <td>IFTT Key:</td>
-          <td><input type="text" size="25" name="IFTT_Key" value="%IFTT_KEY%"></td>
-        </tr>
-        <tr class='showiftt'>
-          <td>IFTT Event - Low Battery (empty to not trigger the event):</td>
-          <td><input type="text" size="25" name="IFTT_Event_low" value="%IFTT_EVENT_LOW%"></td>
-        </tr>
-        <tr class='showiftt'>
-          <td>IFTT Low Battery percentage:</td>
-          <td><input type="number" placeholder="1.0" step="1" min="0" max="100" name="IFTT_low_bl" value="%IFTT_LOW_BL%"></td>
-        </tr>
-        <tr class='showiftt'>
-          <td>IFTT Event - High Battery (empty to not trigger the event):</td>
-          <td><input type="text" size="25" name="IFTT_Event_high" value="%IFTT_EVENT_HIGH%"></td>
-        </tr>
-        <tr class='showiftt'>
-          <td>IFTT high Battery percentage:</td>
-          <td><input type="number" placeholder="1.0" step="1" min="0" max="100" name="IFTT_high_bl" value="%IFTT_HIGH_BL%"></td>
-        </tr>
+        %IFTTT%
         <tr>
           <td>&nbsp;</td>
         </tr>
@@ -330,6 +308,35 @@ const char config_html[] PROGMEM = R"rawliteral(
 
 </html>
 )rawliteral";
+
+#ifdef IFTTT
+const char IFTTT_html[] PROGMEM =R"rawliteral(
+        <tr>
+          <td>Use IFTT:</td>
+          <td><input type="checkbox" name="useIFTT" value="useIFTTBool" %B_USE_IFTT%></td>
+        </tr>
+        <tr class='showiftt'>
+          <td>IFTT Key:</td>
+          <td><input type="text" size="25" name="IFTT_Key" value="%IFTT_KEY%"></td>
+        </tr>
+        <tr class='showiftt'>
+          <td>IFTT Event - Low Battery (empty to not trigger the event):</td>
+          <td><input type="text" size="25" name="IFTT_Event_low" value="%IFTT_EVENT_LOW%"></td>
+        </tr>
+        <tr class='showiftt'>
+          <td>IFTT Low Battery percentage:</td>
+          <td><input type="number" placeholder="1.0" step="1" min="0" max="100" name="IFTT_low_bl" value="%IFTT_LOW_BL%"></td>
+        </tr>
+        <tr class='showiftt'>
+          <td>IFTT Event - High Battery (empty to not trigger the event):</td>
+          <td><input type="text" size="25" name="IFTT_Event_high" value="%IFTT_EVENT_HIGH%"></td>
+        </tr>
+        <tr class='showiftt'>
+          <td>IFTT high Battery percentage:</td>
+          <td><input type="number" placeholder="1.0" step="1" min="0" max="100" name="IFTT_high_bl" value="%IFTT_HIGH_BL%"></td>
+        </tr>
+)rawliteral";
+#endif
 
 const char wifiNoNet_html[] PROGMEM = R"rawliteral(
   <tr><td>No networks found. Refresh to scan again.</td></tr>

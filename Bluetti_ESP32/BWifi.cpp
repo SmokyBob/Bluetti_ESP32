@@ -515,6 +515,7 @@ String processor_config(const String &var)
   {
     toRet = wifiConfig.password;
   }
+  #ifdef IFTTT
   else if (var == F("B_USE_IFTT"))
   {
     toRet = (wifiConfig.useIFTT) ? "checked" : "";
@@ -539,6 +540,7 @@ String processor_config(const String &var)
   {
     toRet = wifiConfig.IFTT_high_bl;
   }
+  #endif
   else if (var == F("HOME_REFRESH_S"))
   {
     toRet = wifiConfig.homeRefreshS;
@@ -571,6 +573,12 @@ String processor_config(const String &var)
 String replacer_config(PGM_P content)
 {
   String toRet = String(content);
+
+  #ifdef IFTTT
+    toRet.replace(F("%IFTTT%"), IFTTT_html);
+  #else
+    toRet.replace(F("%IFTTT%"), F(""));
+  #endif
 
   toRet.replace(F("%TITLE%"), processor_config("TITLE"));
   toRet.replace(F("%PARAM_SAVED%"), processor_config("PARAM_SAVED"));
@@ -654,6 +662,7 @@ void config_POST()
     resetRequired = true;
   }
 
+#ifdef IFTTT
   // IFTT (no restart required)
   if (server.hasArg("useIFTT"))
   {
@@ -668,7 +677,7 @@ void config_POST()
   {
     wifiConfig.useIFTT = false;
   }
-
+#endif
   wifiConfig.homeRefreshS = server.arg("homeRefreshS").toInt();
 
   wifiConfig.showDebugInfos = server.hasArg("showDebugInfos");

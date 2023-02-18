@@ -1,8 +1,10 @@
 #include "BluettiConfig.h"
 #include "PayloadParser.h"
-#include "IFTTT.h"
-#include "utils.h"
 #include "config.h"
+#ifdef IFTTT
+#include "IFTTT.h"
+#endif
+#include "utils.h"
 #include "BTooth.h"
 
 uint16_t parse_uint_field(uint8_t data[])
@@ -259,6 +261,7 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
       // Save data to file for later use
       saveBTData(jsonString);
 
+      #ifdef IFTTT
       if (wifiConfig.IFTT_low_bl != 0)
       {
         // Low Battery Notification (not charging)
@@ -276,6 +279,7 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
           makeIFTTTRequest("high");
         }
       }
+      #endif
     }
   }
 

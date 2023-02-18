@@ -7,7 +7,6 @@
 // Log = 4
 #define DEBUG 100 // For relase set to 100, only setup infos will be printed
 #define logHeap 0 // 1=log heap value in loop
-// #define RESET_WIFI_SETTINGS   1
 
 #define EEPROM_SALT 13374
 
@@ -35,6 +34,8 @@ static String ntpServer = "pool.ntp.org";
 static long gmtOffset_sec = 3600 * (+1);
 static int daylightOffset_sec = 3600;
 
+#define IFTTT //Decomment for IFTTT support and configuration
+
 // N.B. if changed, update the function config_HTML to edit the fields
 // readConfigs and saveConfig needs to be updated too
 typedef struct
@@ -45,6 +46,7 @@ typedef struct
   bool APMode = false; // Start in AP Mode
   String ssid = "";
   String password = "";
+  #ifdef IFTTT
   // IFTT Parameters
   bool useIFTT = false;       // Following parameters used (and shown) only if this is true
   String IFTT_Key = "";       // https://ifttt.com/maker_webhooks then click Documentation
@@ -52,7 +54,7 @@ typedef struct
   uint8_t IFTT_low_bl = 0;
   String IFTT_Event_high = ""; // If "" no event triggered
   uint8_t IFTT_high_bl = 0;
-
+  #endif
   // Root Page configs
   uint8_t homeRefreshS = 30;   // 0 disables autorefresh
   bool showDebugInfos = false; // shows FreeHeap, debugLog Link, etc...
