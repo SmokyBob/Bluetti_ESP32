@@ -48,6 +48,30 @@ unsigned long serialTick = 0;
 
 void loop()
 {
+  if (!wifiConfig.APMode && wifiConfig.ssid.length() > 0 && WiFi.status() != WL_CONNECTED)
+  {
+    Serial.println(F("Wifi Not connected! Reconnecting"));
+    writeLog("Wifi Not connected! Reconnecting");
+    esp_task_wdt_delete(NULL); // Remove watchdog
+    delay(10000);              // Wait 10 secs before trying again
+    wifiConnect(false);        // REinit Wifi
+  }
+  else
+  {
+    if ((millis() - serialTick) > ((WDT_TIMEOUT - 10) * 1000))
+    {
+      if (esp_task_wdt_status(NULL) == ESP_ERR_NOT_FOUND)
+      {
+        esp_task_wdt_add(NULL); // add current thread to WDT watch
+      }
+      else
+      {
+        esp_task_wdt_reset(); // Reset WDT every 5 secs in
+      }
+
+      serialTick = millis();
+    }
+  }
 
 #if logHeap > 0
   if ((millis() - heapMillis) > (heapPrintSeconds * 1000))
@@ -81,31 +105,6 @@ void loop()
     Serial.println(F("------------------------ after WebServer handle " + String(ESP.getHeapSize() - ESP.getFreeHeap())));
   }
 #endif
-
-  if (!wifiConfig.APMode && wifiConfig.ssid.length() > 0 && WiFi.status() != WL_CONNECTED)
-  {
-    Serial.println(F("Wifi Not connected! Reconnecting"));
-    writeLog("Wifi Not connected! Reconnecting");
-    esp_task_wdt_delete(NULL); // Remove watchdog
-    delay(10000);              // Wait 10 secs before trying again
-    wifiConnect(false);        // REinit Wifi
-  }
-  else
-  {
-    if ((millis() - serialTick) > ((WDT_TIMEOUT - 10) * 1000))
-    {
-      if (esp_task_wdt_status(NULL) == ESP_ERR_NOT_FOUND)
-      {
-        esp_task_wdt_add(NULL); // add current thread to WDT watch
-      }
-      else
-      {
-        esp_task_wdt_reset(); // Reset WDT every 5 secs in
-      }
-
-      serialTick = millis();
-    }
-  }
 
   if (wifiConfig.forcedResetHRS != 0)
   {

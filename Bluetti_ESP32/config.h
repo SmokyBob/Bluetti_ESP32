@@ -13,7 +13,7 @@
 #define DEVICE_NAME "BLUETTI-ESP32"
 
 #define BLUETOOTH_QUERY_MESSAGE_DELAY 5000
-#define DEVICE_STATE_UPDATE 5 // NOT USED
+#define DEVICE_STATE_UPDATE 5
 
 #define RELAISMODE 0
 #define RELAIS_PIN 22
@@ -27,7 +27,7 @@
 #endif
 
 // 15 seconds WDT
-#define WDT_TIMEOUT 15
+#define WDT_TIMEOUT 20
 
 // NTP configs
 static String ntpServer = "pool.ntp.org";

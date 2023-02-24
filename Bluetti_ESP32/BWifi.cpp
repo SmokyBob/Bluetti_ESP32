@@ -6,8 +6,10 @@
 #include <WebServer.h>
 #include <DNSServer.h>
 #include "html.h"
+#include "WebSocketsServer.h"
 
 WebServer server(80);
+WebSocketsServer webSocket = WebSocketsServer(81); // create instance for webSocket server on port"81"
 
 // Dns infos for captive portal
 DNSServer dnsServer;
@@ -220,19 +222,9 @@ String processor(const String &var)
   {
     toRet = DEVICE_NAME;
   }
-  else if (var == F("AUTO_REFRESH_H"))
-  {
-    if (wifiConfig.homeRefreshS > 0)
-    {
-      toRet = toRet + "<b>Page autorefresh every " + wifiConfig.homeRefreshS + " secs</b></br>";
-    }
-  }
   else if (var == F("AUTO_REFRESH_B"))
   {
-    if (wifiConfig.homeRefreshS > 0)
-    {
-      toRet = toRet + "<meta http-equiv='refresh' content='" + wifiConfig.homeRefreshS + "'>";
-    }
+    toRet = toRet + "<b>Page Data autorefreshed every " + String(DEVICE_STATE_UPDATE) + " secs</b></br>";
   }
   else if (var == F("HOST"))
   {
@@ -250,18 +242,6 @@ String processor(const String &var)
   {
     toRet = WiFi.macAddress();
   }
-  else if (var == F("UPTIME"))
-  {
-    toRet = convertMilliSecondsToHHMMSS(millis());
-  }
-  else if (var == F("RUNNING_SINCE"))
-  {
-    toRet = runningSince;
-  }
-  else if (var == F("UPTIME_D"))
-  {
-    toRet = millis() / 3600000 / 24;
-  }
   else if (var == F("BLUETTI_ID"))
   {
     toRet = wifiConfig.bluetti_device_id;
@@ -273,56 +253,11 @@ String processor(const String &var)
       toRet = bt_log_Link_html;
     }
   }
-  else if (var == F("B_BT_CONNECTED"))
-  {
-    toRet = (isBTconnected()) ? "checked" : "";
-  }
-  else if (var == F("BT_LAST_MEX_TIME"))
-  {
-    toRet = convertMilliSecondsToHHMMSS(getLastBTMessageTime());
-  }
   else if (var == F("DEBUG_INFOS"))
   {
     if (wifiConfig.showDebugInfos)
     {
       toRet = debugInfos_html;
-      toRet.replace(F("%FREE_HEAP%"), String(ESP.getFreeHeap()));
-      toRet.replace(F("%TOTAL_HEAP%"), String(ESP.getHeapSize()));
-      toRet.replace(F("%PERC_HEAP%"), String((float(ESP.getFreeHeap()) / float(ESP.getHeapSize())) * 100));
-      toRet.replace(F("%MAX_ALLOC%"), String(ESP.getMaxAllocHeap()));
-      toRet.replace(F("%MIN_ALLOC%"), String(ESP.getMinFreeHeap()));
-      toRet.replace(F("%SPIFFS_USED%"), String(SPIFFS.usedBytes()));
-      toRet.replace(F("%SPIFFS_TOTAL%"), String(SPIFFS.totalBytes()));
-      toRet.replace(F("%SPIFFS_PERC%"), String((float(SPIFFS.usedBytes()) / float(SPIFFS.totalBytes())) * 100));
-    }
-  }
-  else if (var == F("DEVICE_STATES_HEADER"))
-  {
-    if (isBTconnected())
-    {
-      toRet = deviceState_header_html;
-    }
-  }
-  else if (var == F("DEVICE_STATES_ROWS"))
-  {
-    if (isBTconnected())
-    {
-      String tmpRow;
-      // Loop over the state field and add a row for each (with the relative data)
-      for (int i = 0; i < sizeof(bluetti_state_data) / sizeof(device_field_data_t); i++)
-      {
-        tmpRow = deviceState_row_html;
-        tmpRow.replace(F("%STATE_NAME%"), map_field_name(bluetti_state_data[i].f_name));
-        tmpRow.replace(F("%STATE_VALUE%"), bluetti_state_data[i].f_value);
-        toRet += tmpRow;
-      }
-    }
-  }
-  else if (var == F("B_AC_OUTPUT_ON"))
-  {
-    if (isBTconnected())
-    {
-      toRet = (bluetti_state_data[AC_OUTPUT_ON].f_value == "1") ? "checked" : "";
     }
   }
 
@@ -335,28 +270,75 @@ String replacer(PGM_P content)
   String toRet = String(content);
 
   toRet.replace(F("%TITLE%"), processor("TITLE"));
-  toRet.replace(F("%AUTO_REFRESH_H%"), processor("AUTO_REFRESH_H"));
   toRet.replace(F("%AUTO_REFRESH_B%"), processor("AUTO_REFRESH_B"));
   toRet.replace(F("%HOST%"), processor("HOST"));
   toRet.replace(F("%SSID%"), processor("SSID"));
   toRet.replace(F("%WiFiRSSI%"), processor("WiFiRSSI"));
   toRet.replace(F("%MAC%"), processor("MAC"));
-  toRet.replace(F("%UPTIME%"), processor("UPTIME"));
-  toRet.replace(F("%RUNNING_SINCE%"), processor("RUNNING_SINCE"));
-  toRet.replace(F("%UPTIME_D%"), processor("UPTIME_D"));
   toRet.replace(F("%BLUETTI_ID%"), processor("BLUETTI_ID"));
   toRet.replace(F("%BT_FILE_LOG%"), processor("BT_FILE_LOG"));
-  toRet.replace(F("%B_BT_CONNECTED%"), processor("B_BT_CONNECTED"));
-  toRet.replace(F("%BT_LAST_MEX_TIME%"), processor("BT_LAST_MEX_TIME"));
   toRet.replace(F("%DEBUG_INFOS%"), processor("DEBUG_INFOS"));
-  toRet.replace(F("%DEVICE_STATES_HEADER%"), processor("DEVICE_STATES_HEADER"));
-  toRet.replace(F("%DEVICE_STATES_ROWS%"), processor("DEVICE_STATES_ROWS"));
-  toRet.replace(F("%B_AC_OUTPUT_ON%"), processor("B_AC_OUTPUT_ON"));
 
   return toRet;
 }
 
 #pragma region Async Ws handlers
+
+void update_root()
+{
+  String jsonString = "{";
+
+  jsonString += "\"UPTIME\" : \"" + convertMilliSecondsToHHMMSS(millis()) + "\"" + ",";
+  jsonString += "\"RUNNING_SINCE\" : \"" + runningSince + "\"" + ",";
+  jsonString += "\"UPTIME_D\" : \"" + convertMilliSecondsToHHMMSS((millis() / 3600000 / 24)) + "\"" + ",";
+  jsonString += "\"B_BT_CONNECTED\" : " + String(isBTconnected()) + "" + ",";
+  jsonString += "\"BT_LAST_MEX_TIME\" : \"" + convertMilliSecondsToHHMMSS(getLastBTMessageTime()) + "\"" + ",";
+  jsonString += "\"B_AC_OUTPUT_ON\" : " + String((bluetti_state_data[AC_OUTPUT_ON].f_value == "1")) + "" + ",";
+
+  jsonString += "\"FREE_HEAP\" : \"" + String(ESP.getFreeHeap()) + "\"" + ",";
+  jsonString += "\"TOTAL_HEAP\" : \"" + String(ESP.getHeapSize()) + "\"" + ",";
+  jsonString += "\"PERC_HEAP\" : \"" + String((float(ESP.getFreeHeap()) / float(ESP.getHeapSize())) * 100) + "\"" + ",";
+
+  jsonString += "\"MAX_ALLOC\" : \"" + String(ESP.getMaxAllocHeap()) + "\"" + ",";
+  jsonString += "\"MIN_ALLOC\" : \"" + String(ESP.getMinFreeHeap()) + "\"" + ",";
+
+  jsonString += "\"SPIFFS_USED\" : \"" + String(SPIFFS.usedBytes()) + "\"" + ",";
+  jsonString += "\"SPIFFS_TOTAL\" : \"" + String(SPIFFS.totalBytes()) + "\"" + ",";
+  jsonString += "\"SPIFFS_PERC\" : \"" + String((float(SPIFFS.usedBytes()) / float(SPIFFS.totalBytes())) * 100) + "\"" + ",";
+
+  jsonString += "\"bluetti_state_data\" : {";
+  for (int i = 0; i < sizeof(bluetti_state_data) / sizeof(device_field_data_t); i++)
+  {
+    String tmp = map_field_name(bluetti_state_data[i].f_name);
+    tmp.toUpperCase();
+    jsonString += "\"" + tmp + "\": " +
+                  " \"" + bluetti_state_data[i].f_value + "\",";
+  }
+  jsonString = jsonString.substring(0, jsonString.length() - 1);
+  jsonString += "},";
+  String lastWebSocketTime = runningSince;
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo, (WDT_TIMEOUT - 5) * 1000))
+  {
+    Serial.println(F("Failed to obtain time"));
+  }
+  else
+  {
+    // Save start time as string in the preferred format
+    // Full param list
+    // https://cplusplus.com/reference/ctime/strftime/
+    char buffer[80];
+    strftime(buffer, 80, "%F %T", &timeinfo); // ISO
+
+    lastWebSocketTime = String(buffer);
+  }
+
+  jsonString += "\"lastWebSocketTime\" : \"" + lastWebSocketTime + "\"" + "}";
+#if DEBUG <= 4
+  Serial.println(jsonString); // print the string for debugging.
+#endif
+  webSocket.broadcastTXT(jsonString); // send the JSON object through the websocket
+}
 
 void root_HTML()
 {
@@ -515,7 +497,7 @@ String processor_config(const String &var)
   {
     toRet = wifiConfig.password;
   }
-  #ifdef IFTTT
+#ifdef IFTTT
   else if (var == F("B_USE_IFTT"))
   {
     toRet = (wifiConfig.useIFTT) ? "checked" : "";
@@ -540,7 +522,7 @@ String processor_config(const String &var)
   {
     toRet = wifiConfig.IFTT_high_bl;
   }
-  #endif
+#endif
   else if (var == F("HOME_REFRESH_S"))
   {
     toRet = wifiConfig.homeRefreshS;
@@ -574,11 +556,11 @@ String replacer_config(PGM_P content)
 {
   String toRet = String(content);
 
-  #ifdef IFTTT
-    toRet.replace(F("%IFTTT%"), IFTTT_html);
-  #else
-    toRet.replace(F("%IFTTT%"), F(""));
-  #endif
+#ifdef IFTTT
+  toRet.replace(F("%IFTTT%"), IFTTT_html);
+#else
+  toRet.replace(F("%IFTTT%"), F(""));
+#endif
 
   toRet.replace(F("%TITLE%"), processor_config("TITLE"));
   toRet.replace(F("%PARAM_SAVED%"), processor_config("PARAM_SAVED"));
@@ -699,9 +681,17 @@ void config_POST()
   config_HTML(true, resetRequired);
 }
 
-void disableBT_HTML()
+void invertBT_HTML()
 {
-  disconnectBT();
+  if (isBTconnected())
+  {
+    disconnectBT();
+  }
+  else
+  {
+    // TODO: riabilitare la connessione al BT
+  }
+
   server.send(200, "text/html",
               "<html><body onload='location.href=\"./\"';></body></html>");
 }
@@ -728,6 +718,37 @@ void showDataLog_HTML()
   download.close();
 }
 
+void webSocketEvent(byte num, WStype_t type, uint8_t *payload, size_t length)
+{
+  switch (type)
+  {
+  case WStype_DISCONNECTED: // enum that read status this is used for debugging.
+    Serial.print("WS Type ");
+    Serial.print(type);
+    Serial.println(": DISCONNECTED");
+    break;
+  case WStype_CONNECTED: // Check if a WebSocket client is connected or not
+    Serial.print("WS Type ");
+    Serial.print(type);
+    Serial.println(": CONNECTED");
+    update_root(); // update the webpage accordingly
+    break;
+  case WStype_TEXT:   // check responce from client
+    Serial.println(); // the payload variable stores the status internally
+    Serial.println(payload[0]);
+    // TODO: instead of post command
+    //  if (payload[0] == '1') {
+    //    pin_status = "ON";
+    //    digitalWrite(22, HIGH);
+    //  }
+    //  if (payload[0] == '0') {
+    //    pin_status = "OFF";
+    //    digitalWrite(22, LOW);
+    //  }
+    break;
+  }
+}
+
 void setWebHandles()
 {
   // WebServerConfig
@@ -735,7 +756,7 @@ void setWebHandles()
 
   server.on("/rebootDevice", HTTP_GET, []()
             {
-    server.send(200, "text/plain", "reboot in 2sec");
+    server.send(200, "text/plain", "reboot in 2sec"); //TODO: add js to reload homepage
     writeLog("Device Reboot requested!");
     disconnectBT();//Gracefully disconnect from BT
     delay(2000);
@@ -743,13 +764,13 @@ void setWebHandles()
 
   server.on("/resetWifiConfig", HTTP_GET, []()
             {
-    server.send(200, "text/plain", "reset Wifi and reboot in 2sec");
+    server.send(200, "text/plain", "reset Wifi and reboot in 2sec");//TODO: add js to reload homepage
     delay(2000);
     initBWifi(true); });
 
   server.on("/resetConfig", HTTP_GET, []()
             {
-    server.send(200, "text/plain", "reset FULL CONFIG and reboot in 2sec");
+    server.send(200, "text/plain", "reset FULL CONFIG and reboot in 2sec"); //TODO: add js to reload homepage
     resetConfig();
     delay(2000);
     ESP.restart(); });
@@ -765,7 +786,7 @@ void setWebHandles()
   server.on("/config", HTTP_POST, config_POST);
 
   // BTDisconnect //TODO: post only with JS... when the html code is in a separate file
-  server.on("/btDisconnect", HTTP_GET, disableBT_HTML);
+  server.on("/btConnectionInvert", HTTP_GET, invertBT_HTML);
 
   server.on("/debugLog", HTTP_GET, showDebugLog_HTML);
 
@@ -784,6 +805,9 @@ void setWebHandles()
   server.onNotFound(notFound);
 
   server.begin();
+
+  webSocket.begin();                 // init the Websocketserver
+  webSocket.onEvent(webSocketEvent); // init the webSocketEvent function when a websocket event occurs
 }
 
 #pragma endregion Async Ws handlers
@@ -873,6 +897,8 @@ void initBWifi(bool resetWifi)
   copyArray(bluetti_device_state, bluetti_state_data, sizeof(bluetti_device_state) / sizeof(device_field_data_t));
 }
 
+unsigned long webSockeUpdate = 0;
+
 void handleWebserver()
 {
   if (doCaptivePortal)
@@ -901,6 +927,13 @@ void handleWebserver()
   }
 
   server.handleClient();
+
+  webSocket.loop(); // websocket server methode that handles all Client
+  if ((unsigned long)(millis() - webSockeUpdate) >= DEVICE_STATE_UPDATE * 1000)
+  {
+    update_root();             // Update the root page with the latest data
+    webSockeUpdate = millis(); // Use the snapshot to set track time until next event
+  }
 }
 
 String runningSince;
