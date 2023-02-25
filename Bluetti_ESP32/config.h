@@ -26,8 +26,8 @@
 #define BLUETTI_TYPE EB3A
 #endif
 
-// 15 seconds WDT
-#define WDT_TIMEOUT 20
+// Watch Dog Timeout in seconds (7 minutes for OTA web updates)
+#define WDT_TIMEOUT 420
 
 // NTP configs
 static String ntpServer = "pool.ntp.org";

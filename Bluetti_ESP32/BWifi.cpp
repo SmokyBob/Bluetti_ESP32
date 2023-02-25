@@ -7,6 +7,7 @@
 #include <DNSServer.h>
 #include "html.h"
 #include "WebSocketsServer.h"
+#include <ElegantOTA.h>
 
 WebServer server(80);
 WebSocketsServer webSocket = WebSocketsServer(81); // create instance for webSocket server on port"81"
@@ -318,7 +319,7 @@ void update_root()
   jsonString += "},";
   String lastWebSocketTime = runningSince;
   struct tm timeinfo;
-  if (!getLocalTime(&timeinfo, (WDT_TIMEOUT - 5) * 1000))
+  if (!getLocalTime(&timeinfo, DEVICE_STATE_UPDATE * 1000))
   {
     Serial.println(F("Failed to obtain time"));
   }
@@ -804,6 +805,7 @@ void setWebHandles()
 
   server.onNotFound(notFound);
 
+  ElegantOTA.begin(&server); // Start ElegantOTA
   server.begin();
 
   webSocket.begin();                 // init the Websocketserver
@@ -837,7 +839,7 @@ void wifiConnect(bool resetWifi)
     {
       delay(500);
       Serial.print(F("."));
-      if ((millis() - connectTimeout) > ((WDT_TIMEOUT - 5) * 1000))
+      if ((millis() - connectTimeout) > (DEVICE_STATE_UPDATE * 1000))
       {
         Serial.println("Wifi Not connected with ssid: " + wifiConfig.ssid + " ! Reset config");
         writeLog("Wifi Not connected with ssid: " + wifiConfig.ssid + " ! Reset config");
@@ -910,7 +912,7 @@ void handleWebserver()
   if (!wifiConfig.APMode && wifiConfig.ssid.length() > 0 && runningSince.length() == 0)
   {
     struct tm timeinfo;
-    if (!getLocalTime(&timeinfo, (WDT_TIMEOUT - 5) * 1000))
+    if (!getLocalTime(&timeinfo, DEVICE_STATE_UPDATE * 1000))
     {
       Serial.println(F("Failed to obtain time"));
     }

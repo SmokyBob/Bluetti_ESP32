@@ -104,6 +104,7 @@ const char index_html[] PROGMEM = R"rawliteral(
       <tr>
         <td>MAC:</td>
         <td>%MAC%</td>
+        <td><b><a style='color:red' href="./update" target='_blank'>OTA Update</a></b></td>
       </tr>
       <tr>
         <td>uptime :</td>

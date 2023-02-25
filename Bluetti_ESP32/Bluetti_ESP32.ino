@@ -58,7 +58,7 @@ void loop()
   }
   else
   {
-    if ((millis() - serialTick) > ((WDT_TIMEOUT - 10) * 1000))
+    if ((millis() - serialTick) > (DEVICE_STATE_UPDATE * 1000))
     {
       if (esp_task_wdt_status(NULL) == ESP_ERR_NOT_FOUND)
       {
