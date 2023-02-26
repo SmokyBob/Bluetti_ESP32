@@ -291,7 +291,7 @@ void update_root()
 
   jsonString += "\"UPTIME\" : \"" + convertMilliSecondsToHHMMSS(millis()) + "\"" + ",";
   jsonString += "\"RUNNING_SINCE\" : \"" + runningSince + "\"" + ",";
-  jsonString += "\"UPTIME_D\" : \"" + convertMilliSecondsToHHMMSS((millis() / 3600000 / 24)) + "\"" + ",";
+  jsonString += "\"UPTIME_D\" : \"" + String(millis() / 3600000 / 24) + "\"" + ",";
   jsonString += "\"B_BT_CONNECTED\" : " + String(isBTconnected()) + "" + ",";
   jsonString += "\"BT_LAST_MEX_TIME\" : \"" + convertMilliSecondsToHHMMSS(getLastBTMessageTime()) + "\"" + ",";
   jsonString += "\"B_AC_OUTPUT_ON\" : " + String((bluetti_state_data[AC_OUTPUT_ON].f_value == "1")) + "" + ",";
