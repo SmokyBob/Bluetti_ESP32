@@ -7,9 +7,7 @@ const char index_html[] PROGMEM = R"rawliteral(
 <head>
   <title>%TITLE%</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!--if online get the official bluetti icon -->
-  <link rel="icon" href="https://cdn.shopify.com/s/files/1/0566/6396/5893/files/Bluettipower_Favicon_logo_96x.png?v=1626861801" type="image/png">
-  <!--<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">-->
+  <link rel="icon" href="data:,">
   <style>
     .switch {
       position: relative;
