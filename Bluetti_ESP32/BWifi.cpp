@@ -524,10 +524,6 @@ String processor_config(const String &var)
     toRet = wifiConfig.IFTT_high_bl;
   }
 #endif
-  else if (var == F("HOME_REFRESH_S"))
-  {
-    toRet = wifiConfig.homeRefreshS;
-  }
   else if (var == F("B_SHOW_DEBUG_INFOS"))
   {
     toRet = (wifiConfig.showDebugInfos) ? "checked" : "";
@@ -577,7 +573,6 @@ String replacer_config(PGM_P content)
   toRet.replace(F("%IFTT_LOW_BL%"), processor_config("IFTT_LOW_BL"));
   toRet.replace(F("%IFTT_EVENT_HIGH%"), processor_config("IFTT_EVENT_HIGH"));
   toRet.replace(F("%IFTT_HIGH_BL%"), processor_config("IFTT_HIGH_BL"));
-  toRet.replace(F("%HOME_REFRESH_S%"), processor_config("HOME_REFRESH_S"));
   toRet.replace(F("%B_SHOW_DEBUG_INFOS%"), processor_config("B_SHOW_DEBUG_INFOS"));
   toRet.replace(F("%B_USE_DBG_FILE_LOG%"), processor_config("B_USE_DBG_FILE_LOG"));
   toRet.replace(F("%BTLOGTIME_START%"), processor_config("BTLOGTIME_START"));
@@ -661,7 +656,6 @@ void config_POST()
     wifiConfig.useIFTT = false;
   }
 #endif
-  wifiConfig.homeRefreshS = server.arg("homeRefreshS").toInt();
 
   wifiConfig.showDebugInfos = server.hasArg("showDebugInfos");
   wifiConfig._useBTFilelog = server.hasArg("_useBTFilelog");
@@ -684,17 +678,28 @@ void config_POST()
 
 void invertBT_HTML()
 {
+  bool restartToReconnect = false;
   if (isBTconnected())
   {
     disconnectBT();
   }
   else
   {
-    // TODO: riabilitare la connessione al BT
+    // IF BLE didn't create memory issues
+    //  manualDisconnect = false;
+    //  doScan = true;
+    //  initBluetooth();//restart the scan task
+    // Bud it does... so...
+    restartToReconnect = true;
   }
 
   server.send(200, "text/html",
               "<html><body onload='location.href=\"./\"';></body></html>");
+
+  if (restartToReconnect)
+  {
+    ESP.restart();
+  }
 }
 
 void showDebugLog_HTML()

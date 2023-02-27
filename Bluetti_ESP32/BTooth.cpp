@@ -140,7 +140,7 @@ BLEClient *pClient;
 
 bool connectToServer()
 {
-  
+
   Serial.print(F("Forming a connection to "));
   Serial.println(bluettiDevice->getAddress().toString().c_str());
 
@@ -209,8 +209,6 @@ bool connectToServer()
 
   return true;
 }
-
-bool manualDisconnect = false;
 
 void disconnectBT()
 {

@@ -56,7 +56,6 @@ typedef struct
   uint8_t IFTT_high_bl = 0;
   #endif
   // Root Page configs
-  uint8_t homeRefreshS = 30;   // 0 disables autorefresh
   bool showDebugInfos = false; // shows FreeHeap, debugLog Link, etc...
   // Logging
   bool useDbgFilelog = false;

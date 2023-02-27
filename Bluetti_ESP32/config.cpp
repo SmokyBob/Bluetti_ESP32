@@ -31,7 +31,6 @@ void readConfigs()
   wifiConfig.IFTT_high_bl = prf_config.getShort("IFTT_high_bl", 0);
   #endif
 
-  wifiConfig.homeRefreshS = prf_config.getShort("homeRefreshS", 0);
   wifiConfig.showDebugInfos = prf_config.getBool("showDebugInfos", false);
   wifiConfig.useDbgFilelog = prf_config.getBool("useDbgFilelog", false);
 
@@ -65,7 +64,6 @@ void saveConfig()
   prf_config.putShort("IFTT_high_bl", wifiConfig.IFTT_high_bl);
   #endif
 
-  prf_config.putShort("homeRefreshS", wifiConfig.homeRefreshS);
   prf_config.putBool("showDebugInfos", wifiConfig.showDebugInfos);
   prf_config.putBool("useDbgFilelog", wifiConfig.useDbgFilelog);
 

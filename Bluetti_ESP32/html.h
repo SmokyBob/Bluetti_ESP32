@@ -7,7 +7,8 @@ const char index_html[] PROGMEM = R"rawliteral(
 <head>
   <title>%TITLE%</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" href="data:,">
+  <!--if online get the official bluetti icon -->
+  <link rel="icon" href="https://cdn.shopify.com/s/files/1/0566/6396/5893/files/Bluettipower_Favicon_logo_96x.png?v=1626861801" type="image/png">
   <!--<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">-->
   <style>
     .switch {
@@ -230,17 +231,21 @@ const char index_html[] PROGMEM = R"rawliteral(
     document.getElementById('BT_LAST_MEX_TIME').innerHTML = obj.BT_LAST_MEX_TIME;
     document.getElementById('chk_AC_OUTPUT_ON').checked = obj.B_AC_OUTPUT_ON;
 
-    //debug infos
-    document.getElementById('FREE_HEAP').innerHTML = obj.FREE_HEAP;
-    document.getElementById('TOTAL_HEAP').innerHTML = obj.TOTAL_HEAP;
-    document.getElementById('PERC_HEAP').innerHTML = obj.PERC_HEAP;
+    //debug infos, html elements might not exists
+    try {
+      document.getElementById('FREE_HEAP').innerHTML = obj.FREE_HEAP;
+      document.getElementById('TOTAL_HEAP').innerHTML = obj.TOTAL_HEAP;
+      document.getElementById('PERC_HEAP').innerHTML = obj.PERC_HEAP;
 
-    document.getElementById('MAX_ALLOC').innerHTML = obj.MAX_ALLOC;
-    document.getElementById('MIN_ALLOC').innerHTML = obj.MIN_ALLOC;
+      document.getElementById('MAX_ALLOC').innerHTML = obj.MAX_ALLOC;
+      document.getElementById('MIN_ALLOC').innerHTML = obj.MIN_ALLOC;
 
-    document.getElementById('SPIFFS_USED').innerHTML = obj.SPIFFS_USED;
-    document.getElementById('SPIFFS_TOTAL').innerHTML = obj.SPIFFS_TOTAL;
-    document.getElementById('SPIFFS_PERC').innerHTML = obj.SPIFFS_PERC;
+      document.getElementById('SPIFFS_USED').innerHTML = obj.SPIFFS_USED;
+      document.getElementById('SPIFFS_TOTAL').innerHTML = obj.SPIFFS_TOTAL;
+      document.getElementById('SPIFFS_PERC').innerHTML = obj.SPIFFS_PERC;
+    } catch (error) {
+      //it's ok
+    }
 
     document.getElementById('lastWebSocketTime').innerHTML = obj.lastWebSocketTime;
 
@@ -358,10 +363,6 @@ const char config_html[] PROGMEM = R"rawliteral(
         %IFTTT%
         <tr>
           <td>&nbsp;</td>
-        </tr>
-        <tr>
-          <td>Home Page Auto Refresh (sec, if 0 = No AutoRefresh):</td>
-          <td><input type="number" placeholder="1.0" step="1" min="0" max="3600" name="homeRefreshS" value="%HOME_REFRESH_S%"></td>
         </tr>
         <tr>
           <td>Show Debug Infos (FreeHeap, debugLog Link, etc...):</td>
