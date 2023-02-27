@@ -46,8 +46,9 @@ void clearLog()
   SPIFFS.remove(F("/debug_log.txt"));
 }
 
-void formatSpiff(){
-  SPIFFS.format();
+void clearSpiffLog(){
+  SPIFFS.remove(F("/debug_log.txt"));
+  SPIFFS.remove(F("/bluetti_data.json"));
 }
 
 void writeLog(String message)

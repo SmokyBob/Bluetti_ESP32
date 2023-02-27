@@ -20,14 +20,14 @@ void setup()
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer.c_str());
   readConfigs();
 
+  initLog(); // Init SPIFFS and debug log to file
+
   if (wifiConfig.clrSpiffOnRst)
   {
-    formatSpiff();
+    clearSpiffLog();
     wifiConfig.clrSpiffOnRst = false;
     saveConfig();
   }
-
-  initLog(); // Init debug log to file
 
   initBWifi(false); // Init Wifi and WebServer
   writeLog("---------------------------");

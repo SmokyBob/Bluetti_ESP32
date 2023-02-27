@@ -14,7 +14,7 @@ extern void initLog();
 
 extern void clearLog();
 
-extern void formatSpiff();
+extern void clearSpiffLog();
 
 extern void writeLog(String message);
 
