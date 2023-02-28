@@ -70,13 +70,12 @@ const char index_html[] PROGMEM = R"rawliteral(
     }
 
     /*BtConnected Rows*/
-    //TODO: find a way, event with js
-    // .btConnected {
-    //   display:none;
-    // }
-    // [id$=btConnected]:checked + table tbody tr td.btConnected{
-    //   display:block;
-    // }
+    /*.btConnected {
+      display:none;
+    }
+    [id$=btConnected]:checked + table > tbody > tr > td.btConnected{
+      display:inline-flex;
+    }*/
     
   </style>
 </head>
@@ -130,7 +129,7 @@ const char index_html[] PROGMEM = R"rawliteral(
       <tr>
         <td>BT last message time:</td>
         <td id='BT_LAST_MEX_TIME'>waiting ...</td>
-        <td style="display: inline-flex;vertical-align: middle;" class='btConnected'>
+        <td style="vertical-align: middle;" class='btConnected'>
           <span>Ac Output: </span>
           <label class="switch">
             <input id='chk_AC_OUTPUT_ON' type="checkbox" onclick="onCheckChanged('AC_OUTPUT_ON',this);" %B_AC_OUTPUT_ON%>
