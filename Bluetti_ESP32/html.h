@@ -70,12 +70,13 @@ const char index_html[] PROGMEM = R"rawliteral(
     }
 
     /*BtConnected Rows*/
-    /*.btConnected {
+    /*BtConnected Rows*/
+    .btConnected {
       display:none;
     }
-    [id$=btConnected]:checked + table > tbody > tr > td.btConnected{
-      display:inline-flex;
-    }*/
+    .btConnected.checked{
+      display:table-cell;
+    }
     
   </style>
 </head>
@@ -130,11 +131,14 @@ const char index_html[] PROGMEM = R"rawliteral(
         <td>BT last message time:</td>
         <td id='BT_LAST_MEX_TIME'>waiting ...</td>
         <td style="vertical-align: middle;" class='btConnected'>
-          <span>Ac Output: </span>
-          <label class="switch">
-            <input id='chk_AC_OUTPUT_ON' type="checkbox" onclick="onCheckChanged('AC_OUTPUT_ON',this);" %B_AC_OUTPUT_ON%>
-            <span class="slider round"></span>
-          </label>
+          <div style="display:inline-flex">
+            Ac Output: 
+            <label class="switch">
+              <input id="chk_AC_OUTPUT_ON" type="checkbox" onclick="onCheckChanged('AC_OUTPUT_ON',this);"
+                %B_AC_OUTPUT_ON%>
+              <span class="slider round"></span>
+            </label>
+          </div>
         </td>
       </tr>
       <tr>
@@ -219,10 +223,12 @@ const char index_html[] PROGMEM = R"rawliteral(
     document.getElementById('UPTIME_D').innerHTML = obj.UPTIME_D;
 
     document.getElementById('btConnected').checked = obj.B_BT_CONNECTED;
-    if (obj.B_BT_CONNECTED){
-        document.getElementById('btnInvertConnect').value='Disconnect from BT';
-    }else{
-      document.getElementById('btnInvertConnect').value='Reconnect to BT';
+    if (obj.B_BT_CONNECTED) {
+      document.getElementById('btnInvertConnect').value = 'Disconnect from BT';
+      document.querySelectorAll(".btConnected").forEach(el => el.className="btConnected checked");
+    } else {
+      document.getElementById('btnInvertConnect').value = 'Reconnect to BT';
+      document.querySelectorAll(".btConnected").forEach(el => el.className="btConnected");
     }
 
     document.getElementById('BT_LAST_MEX_TIME').innerHTML = obj.BT_LAST_MEX_TIME;
