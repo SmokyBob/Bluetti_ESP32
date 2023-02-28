@@ -1,0 +1,219 @@
+<html>
+
+<head>
+  <title>%TITLE%</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- no icon e style here because if connected to BLE we end up without memory :-( -->
+  <link rel="icon" href="./favicon.png">
+  <link rel="stylesheet" href="./styles.css">
+  
+</head>
+
+<body>
+  %AUTO_REFRESH_B%
+  <table id="tblData" border="0" style="width:100%;max-width:900px">
+    <tbody>
+      <tr>
+        <td>host:</td>
+        <td>%HOST%</td>
+        <td><a href="./rebootDevice">Reboot this device</a></td>
+      </tr>
+      <tr>
+        <td>SSID:</td>
+        <td>%SSID%</td>
+        <td><a href="./resetWifiConfig">Reset WIFI config</a></td>
+      </tr>
+      <tr>
+        <td>WiFiRSSI:</td>
+        <td>%WiFiRSSI%</td>
+        <td><b><a href="./config">Change Configuration</a></b></td>
+      </tr>
+      <tr>
+        <td>MAC:</td>
+        <td>%MAC%</td>
+        <td><b><a style="color:red" href="./update" target="_blank">OTA Update</a></b></td>
+      </tr>
+      <tr>
+        <td>uptime :</td>
+        <td id="UPTIME"></td>
+        <td>Running since: <span id="RUNNING_SINCE">waiting ...</span></td>
+      </tr>
+      <tr>
+        <td>uptime (d):</td>
+        <td id="UPTIME_D">waiting ...</td>
+        <td>Last WebSocket message at: <span id="lastWebSocketTime">waiting ...</span></td>
+      </tr>
+      <tr>
+        <td>Bluetti device id:</td>
+        <td>%BLUETTI_ID%</td>
+        %BT_FILE_LOG%
+      </tr>
+      <tr>
+        <td>BT connected: </td>
+        <td><input id="btConnected" class="chkBtConnected" type="checkbox" onclick="return false;"></td>
+        <td>
+          <input id="btnInvertConnect" type="button" onclick="location.href='./btConnectionInvert';"
+            value="Disconnect from BT">
+        </td>
+      </tr>
+      <tr>
+        <td>BT last message time:</td>
+        <td id="BT_LAST_MEX_TIME">waiting ...</td>
+        <td style="vertical-align: middle;" class="btConnected">
+          <div style="display:inline-flex">
+            Ac Output: 
+            <label class="switch">
+              <input id="chk_AC_OUTPUT_ON" type="checkbox" onclick="onCheckChanged('AC_OUTPUT_ON',this);"
+                %B_AC_OUTPUT_ON%>
+              <span class="slider round"></span>
+            </label>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="3">
+          <hr>
+        </td>
+      </tr>
+      %DEBUG_INFOS%
+      <tr>
+        <td colspan="4" class="btConnected"><b>Device States</b></td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+
+<script>
+  function onCheckChanged(command, chkBox) {
+    var val = '0';
+    if (chkBox.checked) {
+      val = '1';
+    }
+    postCommand(command, val);
+  }
+
+  function postCommand(type, value) {
+
+    const data = new URLSearchParams();
+    data.append('type', type);
+    data.append('value', value);
+
+    fetch("./post", {
+      method: "POST",
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: data
+    }).then(res => {
+      console.log("Request complete! response:", res);
+    });
+  }
+
+  var Socket;
+
+  function init() {
+    Socket = new WebSocket('ws://' + window.location.hostname + ':81/');
+    var timeout = setTimeout(function () {
+      timedOut = true;
+
+      try {
+        Socket.close();
+      } catch (error) {
+        console.error(error);
+      }
+
+      timedOut = false;
+    }, 15000);
+
+    Socket.onmessage = function (event) {
+      clearTimeout(timeout);
+      processCommand(event);
+    };
+    Socket.onclose = function (e) {
+      clearTimeout(timeout);
+      console.log('Socket is closed. Reconnect will be attempted in 1 second.', e.reason);
+      setTimeout(function () {
+        init();
+      }, 1000);
+    };
+
+    Socket.onerror = function (err) {
+      console.error('Socket encountered error: ', err.message, 'Closing socket');
+      try {
+        Socket.close();
+      } catch (error) {
+        console.error(error);
+      }
+    };
+  }
+  function processCommand(event) {
+    var obj = JSON.parse(event.data);
+    // console.log('---------');
+    // console.log(event.data);
+
+    document.getElementById('UPTIME').innerHTML = obj.UPTIME;
+    document.getElementById('RUNNING_SINCE').innerHTML = obj.RUNNING_SINCE;
+    document.getElementById('UPTIME_D').innerHTML = obj.UPTIME_D;
+
+    document.getElementById('btConnected').checked = obj.B_BT_CONNECTED;
+    if (obj.B_BT_CONNECTED) {
+      document.getElementById('btnInvertConnect').value = 'Disconnect from BT';
+      document.querySelectorAll(".btConnected").forEach(el => el.className="btConnected checked");
+    } else {
+      document.getElementById('btnInvertConnect').value = 'Reconnect to BT';
+      document.querySelectorAll(".btConnected").forEach(el => el.className="btConnected");
+    }
+
+    document.getElementById('BT_LAST_MEX_TIME').innerHTML = obj.BT_LAST_MEX_TIME;
+    document.getElementById('chk_AC_OUTPUT_ON').checked = obj.B_AC_OUTPUT_ON;
+
+    //debug infos, html elements might not exists
+    try {
+      document.getElementById('FREE_HEAP').innerHTML = obj.FREE_HEAP;
+      document.getElementById('TOTAL_HEAP').innerHTML = obj.TOTAL_HEAP;
+      document.getElementById('PERC_HEAP').innerHTML = obj.PERC_HEAP;
+
+      document.getElementById('MAX_ALLOC').innerHTML = obj.MAX_ALLOC;
+      document.getElementById('MIN_ALLOC').innerHTML = obj.MIN_ALLOC;
+
+      document.getElementById('SPIFFS_USED').innerHTML = obj.SPIFFS_USED;
+      document.getElementById('SPIFFS_TOTAL').innerHTML = obj.SPIFFS_TOTAL;
+      document.getElementById('SPIFFS_PERC').innerHTML = obj.SPIFFS_PERC;
+    } catch (error) {
+      //it's ok
+    }
+
+    document.getElementById('lastWebSocketTime').innerHTML = obj.lastWebSocketTime;
+
+    for (var key in obj.bluetti_state_data) {
+      if (obj.bluetti_state_data.hasOwnProperty(key)) {
+        //if the element desn't exists, add a new row
+        var el = document.getElementById(key);
+        if (el == null) {
+          var table = document.getElementById('tblData');
+          var rowCount = table.rows.length;
+          var row = table.insertRow(rowCount);
+          row.innerHTML = "<td class=\"btConnected\">" + key + "</td>" +
+            "<td id=\"" + key + "\" class=\"btConnected\">waiting ...</td>";
+
+          el = document.getElementById(key);
+        }
+        el.innerHTML = obj.bluetti_state_data[key];
+      }
+    }
+
+  }
+  //TODO: might be interesting in the future instead of a post call?
+  // document.getElementById('BTN_1').addEventListener('click', button_1_pressed);
+  // document.getElementById('BTN_2').addEventListener('click', button_2_pressed);
+  // function button_1_pressed() {
+  //   Socket.send('1');
+  // }
+  // function button_2_pressed() {
+  //   Socket.send('0');
+  // }
+
+  window.onload = function (event) {
+    init();
+  }
+</script>
+
+</html>
