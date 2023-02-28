@@ -49,26 +49,26 @@ class BluettiAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks
   /**
    * Called for each advertising BLE server.
    */
-  void onResult(BLEAdvertisedDevice advertisedDevice)
+  void onResult(BLEAdvertisedDevice *advertisedDevice)
   {
     Serial.print(F("BLE Advertised Device found: "));
-    Serial.println(F(advertisedDevice.toString().c_str()));
+    Serial.println(F(advertisedDevice->toString().c_str()));
 
     // We have found a device, let us now see if it contains the service we are looking for.
-    if (advertisedDevice.haveServiceUUID() && advertisedDevice.isAdvertisingService(serviceUUID) && advertisedDevice.getName().compare(settings.bluetti_device_id.c_str()))
+    if (advertisedDevice->haveServiceUUID() && advertisedDevice->isAdvertisingService(serviceUUID) && advertisedDevice->getName().compare(settings.bluetti_device_id.c_str()))
     {
       Serial.println(F("device found stop scan."));
       BLEDevice::getScan()->stop();
       pBLEScan->clearResults(); // delete results fromBLEScan buffer to release memory
 
       Serial.println(F("set variables for next loop to connect."));
-      bluettiDevice = new BLEAdvertisedDevice(advertisedDevice);
+      bluettiDevice = advertisedDevice;
       doConnect = true;
       doScan = true; // Rescan if connection is close abnormally
     }
     else
     {
-      Serial.println(F("device id not matched, no connect "));
+      Serial.println(F("device id not matched, or serviceUUID not found no connect "));
     }
   }
 };
@@ -144,6 +144,7 @@ bool connectToServer()
   Serial.print(F("Forming a connection to "));
   Serial.println(bluettiDevice->getAddress().toString().c_str());
 
+  NimBLEDevice::setMTU(517); // set client to request maximum MTU from server (default is 23 otherwise)
   pClient = BLEDevice::createClient();
   Serial.println(F(" - Created client"));
 
@@ -152,8 +153,6 @@ bool connectToServer()
   // Connect to the remove BLE Server.
   pClient->connect(bluettiDevice); // if you pass BLEAdvertisedDevice instead of address, it will be recognized type of peer device address (public or private)
   Serial.println(F(" - Connected to server"));
-
-  pClient->setMTU(517); // set client to request maximum MTU from server (default is 23 otherwise)
 
   // Obtain a reference to the service we are after in the remote BLE server.
   BLERemoteService *pRemoteService = pClient->getService(serviceUUID);
@@ -196,7 +195,11 @@ bool connectToServer()
   }
 
   if (pRemoteNotifyCharacteristic->canNotify())
-    pRemoteNotifyCharacteristic->registerForNotify(notifyCallback);
+  {
+    // Deprecated in Nimble
+    // pRemoteNotifyCharacteristic->registerForNotify(notifyCallback);
+    pRemoteNotifyCharacteristic->subscribe(true, notifyCallback);
+  }
 
   connected = true;
   writeLog("Connected to the Bluetti Device");
@@ -269,6 +272,7 @@ void handleBluetooth()
       {
         Serial.println(F("We have failed to connect to the server; there is nothin more we will do. nope, try again next loop (after 2 secs)"));
         writeLog("We have failed to connect to the server; there is nothin more we will do. nope, try again next loop (after 2 secs)");
+        doScan = true;
         delay(2 * 1000);
       }
     }
@@ -320,7 +324,7 @@ void handleBluetooth()
     }
     else if (doScan)
     {
-      BLEDevice::getScan()->start(0);
+      initBluetooth();
     }
   }
 }
