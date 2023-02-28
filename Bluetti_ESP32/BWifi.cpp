@@ -5,6 +5,7 @@
 #include "utils.h"
 #include <WebServer.h>
 #include <DNSServer.h>
+#include "html.h"
 #include "WebSocketsServer.h"
 #include <ElegantOTA.h>
 
@@ -148,9 +149,7 @@ String getScanItemOut()
   int n = _numNetworks;
   if (n == 0)
   {
-    rows += R"rawliteral(
-            <tr><td>No networks found. Refresh to scan again.</td></tr>
-          )rawliteral"; // No Networks
+    rows += wifiNoNet_html; // No Networks
   }
   else
   {
@@ -190,13 +189,7 @@ String getScanItemOut()
     }
 
     // Base Row
-    const String HTTP_ITEM_STR = R"rawliteral(
-      <tr class="wifiNetwork">
-        <td colspan="3"><a href="#"
-            onclick="document.getElementsByName('ssid')[0].value=this.getAttribute('data-ssid');"
-            data-ssid="%CURR_SSID%">%CURR_SSID%</a></td>
-      </tr>
-    )rawliteral";
+    const String HTTP_ITEM_STR = wifiRow_html;
 
     // build networks rows for display
     for (int i = 0; i < n; i++)
@@ -258,38 +251,14 @@ String processor(const String &var)
   {
     if (wifiConfig._useBTFilelog)
     {
-      toRet = R"rawliteral(
-                <td><a href="./dataLog" target="_blank" class="btConnected">Bluetti data Log</a></td>
-              )rawliteral";
+      toRet = bt_log_Link_html;
     }
   }
   else if (var == F("DEBUG_INFOS"))
   {
     if (wifiConfig.showDebugInfos)
     {
-      toRet = R"rawliteral(      
-      <tr>
-        <td>Free Heap (Bytes):</td>
-        <td><span id="FREE_HEAP">waiting ...</span> of <span id="TOTAL_HEAP">waiting ...</span> (<span id="PERC_HEAP">waiting ...</span> %)</td>
-      </tr>
-      <tr>
-        <td>Alloc Heap / Min Free Alloc Heap(Bytes):</td>
-        <td><span id="MAX_ALLOC">waiting ...</span> / <span id="MIN_ALLOC">waiting ...</span></td>
-      </tr>
-      <tr>
-        <td><a href="./debugLog" target="_blank">Debug Log</a></td>
-        <td><b><a href="./clearLog" target="_blank">Clear Debug Log</a></b></td>
-      </tr>
-      <tr>
-        <td>SPIFFS Used (Bytes):</td>
-        <td><span id="SPIFFS_USED">waiting ...</span> of <span id="SPIFFS_TOTAL">waiting ...</span> (<span id="SPIFFS_PERC">waiting ...</span> %)</td>
-      </tr>
-      <tr>
-        <td colspan="3">
-          <hr>
-        </td>
-      </tr>
-      )rawliteral";
+      toRet = debugInfos_html;
     }
   }
 
@@ -297,19 +266,21 @@ String processor(const String &var)
 }
 
 // Should help with the transition to AsyncWebServer
-String replacer(String content)
+String replacer(PGM_P content)
 {
-  content.replace(F("%TITLE%"), processor("TITLE"));
-  content.replace(F("%AUTO_REFRESH_B%"), processor("AUTO_REFRESH_B"));
-  content.replace(F("%HOST%"), processor("HOST"));
-  content.replace(F("%SSID%"), processor("SSID"));
-  content.replace(F("%WiFiRSSI%"), processor("WiFiRSSI"));
-  content.replace(F("%MAC%"), processor("MAC"));
-  content.replace(F("%BLUETTI_ID%"), processor("BLUETTI_ID"));
-  content.replace(F("%BT_FILE_LOG%"), processor("BT_FILE_LOG"));
-  content.replace(F("%DEBUG_INFOS%"), processor("DEBUG_INFOS"));
+  String toRet = String(content);
 
-  return content;
+  toRet.replace(F("%TITLE%"), processor("TITLE"));
+  toRet.replace(F("%AUTO_REFRESH_B%"), processor("AUTO_REFRESH_B"));
+  toRet.replace(F("%HOST%"), processor("HOST"));
+  toRet.replace(F("%SSID%"), processor("SSID"));
+  toRet.replace(F("%WiFiRSSI%"), processor("WiFiRSSI"));
+  toRet.replace(F("%MAC%"), processor("MAC"));
+  toRet.replace(F("%BLUETTI_ID%"), processor("BLUETTI_ID"));
+  toRet.replace(F("%BT_FILE_LOG%"), processor("BT_FILE_LOG"));
+  toRet.replace(F("%DEBUG_INFOS%"), processor("DEBUG_INFOS"));
+
+  return toRet;
 }
 
 #pragma region Async Ws handlers
@@ -395,20 +366,8 @@ void root_HTML()
   toLog = toLog + "Alloc Heap (Bytes): " + ESP.getMaxAllocHeap() + " Min Free Heap (Bytes):" + ESP.getMinFreeHeap();
   writeLog(toLog);
 
-  File file = SPIFFS.open("/index.html", FILE_READ);
-
-  if (!file)
-  {
-    server.send(200, "text/text; charset=utf-8", "index.html not found");
-  }
-  else
-  {
-    String html = file.readString();
-    // Replace tags in the html template before sending it to the client
-    server.send(200, "text/html; charset=utf-8", replacer(html));
-  }
-
-  file.close();
+  // Replace tags in the html template before sending it to the client
+  server.send(200, "text/html; charset=utf-8", replacer(index_html));
 }
 
 void notFound()
@@ -509,14 +468,14 @@ String processor_config(const String &var)
   {
     if (!b_paramsSaved)
     {
-      toRet = F("hide");
+      toRet = F("display:none");
     }
   }
   else if (var == F("RESTART_REQUIRED"))
   {
     if (!b_resetRequired)
     {
-      toRet = F("hide");
+      toRet = F("display:none");
     }
   }
   else if (var == F("BLUETTI_DEVICE_ID"))
@@ -590,60 +549,37 @@ String processor_config(const String &var)
 }
 
 // Should help with the transition to AsyncWebServer
-String replacer_config(String content)
+String replacer_config(PGM_P content)
 {
+  String toRet = String(content);
+
 #ifdef IFTTT
-  content.replace(F("%IFTTT%"), R"rawliteral(
-        <tr>
-          <td>Use IFTT:</td>
-          <td><input type="checkbox" name="useIFTT" value="useIFTTBool" %B_USE_IFTT%></td>
-        </tr>
-        <tr class="showiftt">
-          <td>IFTT Key:</td>
-          <td><input type="text" size="25" name="IFTT_Key" value="%IFTT_KEY%"></td>
-        </tr>
-        <tr class="showiftt">
-          <td>IFTT Event - Low Battery (empty to not trigger the event):</td>
-          <td><input type="text" size="25" name="IFTT_Event_low" value="%IFTT_EVENT_LOW%"></td>
-        </tr>
-        <tr class="showiftt">
-          <td>IFTT Low Battery percentage:</td>
-          <td><input type="number" placeholder="1.0" step="1" min="0" max="100" name="IFTT_low_bl" value="%IFTT_LOW_BL%"></td>
-        </tr>
-        <tr class="showiftt">
-          <td>IFTT Event - High Battery (empty to not trigger the event):</td>
-          <td><input type="text" size="25" name="IFTT_Event_high" value="%IFTT_EVENT_HIGH%"></td>
-        </tr>
-        <tr class="showiftt">
-          <td>IFTT high Battery percentage:</td>
-          <td><input type="number" placeholder="1.0" step="1" min="0" max="100" name="IFTT_high_bl" value="%IFTT_HIGH_BL%"></td>
-        </tr>
-    )rawliteral");
+  toRet.replace(F("%IFTTT%"), IFTTT_html);
 #else
   toRet.replace(F("%IFTTT%"), F(""));
 #endif
 
-  content.replace(F("%TITLE%"), processor_config("TITLE"));
-  content.replace(F("%PARAM_SAVED%"), processor_config("PARAM_SAVED"));
-  content.replace(F("%RESTART_REQUIRED%"), processor_config("RESTART_REQUIRED"));
-  content.replace(F("%BLUETTI_DEVICE_ID%"), processor_config("BLUETTI_DEVICE_ID"));
-  content.replace(F("%WIFI_SCAN%"), processor_config("WIFI_SCAN"));
-  content.replace(F("%B_APMODE%"), processor_config("B_APMODE"));
-  content.replace(F("%SSID%"), processor_config("SSID"));
-  content.replace(F("%PASSWORD%"), processor_config("PASSWORD"));
-  content.replace(F("%B_USE_IFTT%"), processor_config("B_USE_IFTT"));
-  content.replace(F("%IFTT_KEY%"), processor_config("IFTT_KEY"));
-  content.replace(F("%IFTT_EVENT_LOW%"), processor_config("IFTT_EVENT_LOW"));
-  content.replace(F("%IFTT_LOW_BL%"), processor_config("IFTT_LOW_BL"));
-  content.replace(F("%IFTT_EVENT_HIGH%"), processor_config("IFTT_EVENT_HIGH"));
-  content.replace(F("%IFTT_HIGH_BL%"), processor_config("IFTT_HIGH_BL"));
-  content.replace(F("%B_SHOW_DEBUG_INFOS%"), processor_config("B_SHOW_DEBUG_INFOS"));
-  content.replace(F("%B_USE_DBG_FILE_LOG%"), processor_config("B_USE_DBG_FILE_LOG"));
-  content.replace(F("%BTLOGTIME_START%"), processor_config("BTLOGTIME_START"));
-  content.replace(F("%BTLOGTIME_STOP%"), processor_config("BTLOGTIME_STOP"));
-  content.replace(F("%B_CLRSPIFF_ON_RST%"), processor_config("B_CLRSPIFF_ON_RST"));
+  toRet.replace(F("%TITLE%"), processor_config("TITLE"));
+  toRet.replace(F("%PARAM_SAVED%"), processor_config("PARAM_SAVED"));
+  toRet.replace(F("%RESTART_REQUIRED%"), processor_config("RESTART_REQUIRED"));
+  toRet.replace(F("%BLUETTI_DEVICE_ID%"), processor_config("BLUETTI_DEVICE_ID"));
+  toRet.replace(F("%WIFI_SCAN%"), processor_config("WIFI_SCAN"));
+  toRet.replace(F("%B_APMODE%"), processor_config("B_APMODE"));
+  toRet.replace(F("%SSID%"), processor_config("SSID"));
+  toRet.replace(F("%PASSWORD%"), processor_config("PASSWORD"));
+  toRet.replace(F("%B_USE_IFTT%"), processor_config("B_USE_IFTT"));
+  toRet.replace(F("%IFTT_KEY%"), processor_config("IFTT_KEY"));
+  toRet.replace(F("%IFTT_EVENT_LOW%"), processor_config("IFTT_EVENT_LOW"));
+  toRet.replace(F("%IFTT_LOW_BL%"), processor_config("IFTT_LOW_BL"));
+  toRet.replace(F("%IFTT_EVENT_HIGH%"), processor_config("IFTT_EVENT_HIGH"));
+  toRet.replace(F("%IFTT_HIGH_BL%"), processor_config("IFTT_HIGH_BL"));
+  toRet.replace(F("%B_SHOW_DEBUG_INFOS%"), processor_config("B_SHOW_DEBUG_INFOS"));
+  toRet.replace(F("%B_USE_DBG_FILE_LOG%"), processor_config("B_USE_DBG_FILE_LOG"));
+  toRet.replace(F("%BTLOGTIME_START%"), processor_config("BTLOGTIME_START"));
+  toRet.replace(F("%BTLOGTIME_STOP%"), processor_config("BTLOGTIME_STOP"));
+  toRet.replace(F("%B_CLRSPIFF_ON_RST%"), processor_config("B_CLRSPIFF_ON_RST"));
 
-  return content;
+  return toRet;
 }
 
 void config_HTML(bool paramsSaved = false, bool resetRequired = false)
@@ -651,20 +587,7 @@ void config_HTML(bool paramsSaved = false, bool resetRequired = false)
   b_paramsSaved = paramsSaved;
   b_resetRequired = resetRequired;
 
-  File file = SPIFFS.open("/config.html", FILE_READ);
-
-  if (!file)
-  {
-    server.send(200, "text/text; charset=utf-8", "config.html not found");
-  }
-  else
-  {
-    String html = file.readString();
-    // Replace tags in the html template before sending it to the client
-    server.send(200, "text/html; charset=utf-8", replacer_config(html));
-  }
-
-  file.close();
+  server.send(200, "text/html; charset=utf-8", replacer_config(config_html));
 
   if (resetRequired)
   {
@@ -832,33 +755,10 @@ void webSocketEvent(byte num, WStype_t type, uint8_t *payload, size_t length)
   }
 }
 
-void streamFile(String filepath, String mime)
-{
-  File dataFile = SPIFFS.open(filepath, "r");
-
-  if (server.streamFile(dataFile, mime) != dataFile.size())
-  {
-    Serial.println("Sent less data than expected!");
-  }
-  else
-  {
-    Serial.println("Page served!");
-  }
-
-  dataFile.close();
-}
-
 void setWebHandles()
 {
   // WebServerConfig
   server.on("/", HTTP_GET, root_HTML);
-
-  // Static from SPIFFS
-  server.on("/favicon.png", HTTP_GET, []()
-            { streamFile("/favicon.png", "image/png"); });
-
-  server.on("/styles.css", HTTP_GET, []()
-            { streamFile("/styles.css", "text/css"); });
 
   server.on("/rebootDevice", HTTP_GET, []()
             {
