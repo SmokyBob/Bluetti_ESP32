@@ -57,14 +57,21 @@ class BluettiAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks
     // We have found a device, let us now see if it contains the service we are looking for.
     if (advertisedDevice->haveServiceUUID() && advertisedDevice->isAdvertisingService(serviceUUID) && advertisedDevice->getName().compare(settings.bluetti_device_id.c_str()))
     {
-      Serial.println(F("device found stop scan."));
-      BLEDevice::getScan()->stop();
-      pBLEScan->clearResults(); // delete results fromBLEScan buffer to release memory
+      //Keep only public addresses
+      if (advertisedDevice->getAddressType() == BLE_ADDR_PUBLIC)
+      {
+        Serial.println(F("device found stop scan."));
+        BLEDevice::getScan()->stop();
+        pBLEScan->clearResults(); // delete results fromBLEScan buffer to release memory
 
-      Serial.println(F("set variables for next loop to connect."));
-      bluettiDevice = advertisedDevice;
-      doConnect = true;
-      doScan = true; // Rescan if connection is close abnormally
+        Serial.println(F("set variables for next loop to connect."));
+        serverAddress = advertisedDevice->getAddress();
+        doConnect = true;
+        doScan = true; // Rescan if connection is close abnormally
+      }else{
+        Serial.print(F("Private Address, skip. Addr:"));
+        Serial.println(advertisedDevice->getAddress().toString().c_str());
+      }
     }
     else
     {
@@ -142,7 +149,7 @@ bool connectToServer()
 {
 
   Serial.print(F("Forming a connection to "));
-  Serial.println(bluettiDevice->getAddress().toString().c_str());
+  Serial.println(serverAddress.toString().c_str());
 
   NimBLEDevice::setMTU(517); // set client to request maximum MTU from server (default is 23 otherwise)
   pClient = BLEDevice::createClient();
@@ -151,7 +158,7 @@ bool connectToServer()
   pClient->setClientCallbacks(new MyClientCallback());
 
   // Connect to the remove BLE Server.
-  pClient->connect(bluettiDevice); // if you pass BLEAdvertisedDevice instead of address, it will be recognized type of peer device address (public or private)
+  pClient->connect(serverAddress); 
   Serial.println(F(" - Connected to server"));
 
   // Obtain a reference to the service we are after in the remote BLE server.
@@ -271,7 +278,6 @@ void handleBluetooth()
       else
       {
         Serial.println(F("We have failed to connect to the server; there is nothin more we will do. nope, try again next loop (after 2 secs)"));
-        writeLog("We have failed to connect to the server; there is nothin more we will do. nope, try again next loop (after 2 secs)");
         doScan = true;
         delay(2 * 1000);
       }

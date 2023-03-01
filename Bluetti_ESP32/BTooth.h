@@ -9,7 +9,7 @@ static boolean doScan = false;
 static boolean manualDisconnect = false;
 static BLERemoteCharacteristic *pRemoteWriteCharacteristic;
 static BLERemoteCharacteristic *pRemoteNotifyCharacteristic;
-static BLEAdvertisedDevice *bluettiDevice;
+static BLEAddress serverAddress;
 
 typedef struct __attribute__((packed))
 {
