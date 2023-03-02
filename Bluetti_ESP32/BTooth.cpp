@@ -57,7 +57,7 @@ class BluettiAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks
     // We have found a device, let us now see if it contains the service we are looking for.
     if (advertisedDevice->haveServiceUUID() && advertisedDevice->isAdvertisingService(serviceUUID) && advertisedDevice->getName().compare(settings.bluetti_device_id.c_str()))
     {
-      //Keep only public addresses
+      // Keep only public addresses
       if (advertisedDevice->getAddressType() == BLE_ADDR_PUBLIC)
       {
         Serial.println(F("device found stop scan."));
@@ -151,14 +151,20 @@ bool connectToServer()
   Serial.print(F("Forming a connection to "));
   Serial.println(serverAddress.toString().c_str());
 
-  NimBLEDevice::setMTU(517); // set client to request maximum MTU from server (default is 23 otherwise)
+  BLEDevice::setMTU(517); // set client to request maximum MTU from server (default is 23 otherwise)
   pClient = BLEDevice::createClient();
   Serial.println(F(" - Created client"));
 
   pClient->setClientCallbacks(new MyClientCallback());
 
   // Connect to the remove BLE Server.
-  pClient->connect(serverAddress); 
+
+  if (!pClient->connect(serverAddress)) {
+      /** Created a client but failed to connect, don't need to keep it as it has no data */
+      BLEDevice::deleteClient(pClient);
+      Serial.println("Failed to connect, deleted client");
+      return false;
+  }
   Serial.println(F(" - Connected to server"));
 
   // Obtain a reference to the service we are after in the remote BLE server.
@@ -203,7 +209,7 @@ bool connectToServer()
 
   if (pRemoteNotifyCharacteristic->canNotify())
   {
-    // Deprecated in Nimble
+    // Deprecated in NimBLE
     // pRemoteNotifyCharacteristic->registerForNotify(notifyCallback);
     pRemoteNotifyCharacteristic->subscribe(true, notifyCallback);
   }
@@ -277,13 +283,13 @@ void handleBluetooth()
       }
       else
       {
-        Serial.println(F("We have failed to connect to the server; there is nothin more we will do. nope, try again next loop (after 2 secs)"));
+        Serial.println(F("We have failed to connect to the server; try again next loop (after 2 secs)"));
         doScan = true;
         delay(2 * 1000);
       }
     }
 
-    // Check only if the client is not pourposely disconnected
+    // Check only if the client is not purposely disconnected
     if (!manualDisconnect)
     {
       if ((millis() - lastBTMessage) > (MAX_DISCONNECTED_TIME_UNTIL_REBOOT * 60000))

@@ -686,11 +686,9 @@ void invertBT_HTML()
   else
   {
     // IF BLE didn't create memory issues
-    //  manualDisconnect = false;
-    //  doScan = true;
-    //  initBluetooth();//restart the scan task
-    // Bud it does... so...
-    restartToReconnect = true;
+     manualDisconnect = false;
+     doScan = true;
+     initBluetooth();//restart the scan task
   }
 
   server.send(200, "text/html",
