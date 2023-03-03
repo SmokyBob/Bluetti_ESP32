@@ -222,15 +222,6 @@ const char index_html[] PROGMEM = R"rawliteral(
     document.getElementById('RUNNING_SINCE').innerHTML = obj.RUNNING_SINCE;
     document.getElementById('UPTIME_D').innerHTML = obj.UPTIME_D;
 
-    document.getElementById('btConnected').checked = obj.B_BT_CONNECTED;
-    if (obj.B_BT_CONNECTED) {
-      document.getElementById('btnInvertConnect').value = 'Disconnect from BT';
-      document.querySelectorAll(".btConnected").forEach(el => el.className="btConnected checked");
-    } else {
-      document.getElementById('btnInvertConnect').value = 'Reconnect to BT';
-      document.querySelectorAll(".btConnected").forEach(el => el.className="btConnected");
-    }
-
     document.getElementById('BT_LAST_MEX_TIME').innerHTML = obj.BT_LAST_MEX_TIME;
     document.getElementById('chk_AC_OUTPUT_ON').checked = obj.B_AC_OUTPUT_ON;
 
@@ -267,6 +258,15 @@ const char index_html[] PROGMEM = R"rawliteral(
           }
           el.innerHTML = obj.bluetti_state_data[key];
         }
+    }
+
+    document.getElementById('btConnected').checked = obj.B_BT_CONNECTED;
+    if (obj.B_BT_CONNECTED) {
+      document.getElementById('btnInvertConnect').value = 'Disconnect from BT';
+      document.querySelectorAll(".btConnected").forEach(el => el.className="btConnected checked");
+    } else {
+      document.getElementById('btnInvertConnect').value = 'Reconnect to BT';
+      document.querySelectorAll(".btConnected").forEach(el => el.className="btConnected");
     }
 
   }
