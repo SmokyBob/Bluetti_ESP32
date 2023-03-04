@@ -3,14 +3,20 @@
 #include "BTooth.h"
 #include <ESPmDNS.h>
 #include "utils.h"
-#include <WebServer.h>
+#ifdef ESP32
+#include <WiFi.h>
+#include <AsyncTCP.h>
+#elif defined(ESP8266)
+#include <ESP8266WiFi.h>
+#include <ESPAsyncTCP.h>
+#endif
+#include <ESPAsyncWebServer.h>
 #include <DNSServer.h>
 #include "html.h"
-#include "WebSocketsServer.h"
-#include <ElegantOTA.h>
+#include <AsyncElegantOTA.h>
 
-WebServer server(80);
-WebSocketsServer webSocket = WebSocketsServer(81); // create instance for webSocket server on port"81"
+AsyncWebServer server(80);
+AsyncWebSocket webSocket("/ws");
 
 // Dns infos for captive portal
 DNSServer dnsServer;
@@ -24,39 +30,6 @@ void resetConfig()
 }
 
 bool doCaptivePortal = false;
-
-// Adapted from https://github.com/tzapu/WiFiManager/blob/master/WiFiManager.cpp
-boolean captivePortal()
-{
-#if DEBUG <= 4
-  Serial.println(F(" captive portal check"));
-#endif
-  if (!doCaptivePortal)
-    return false; // skip redirections, @todo maybe allow redirection even when no cp ? might be useful
-
-#if DEBUG <= 4
-  Serial.println(F("Captive portal enabled"));
-#endif
-  String serverLoc = server.client().localIP().toString();
-  if (server.client().localPort() != 80)
-    serverLoc += ":80";                               // add port if not default
-  bool doredirect = serverLoc != server.hostHeader(); // redirect if hostheader not server ip, prevent redirect loops
-
-#if DEBUG <= 4
-  Serial.print(F("doredirect: "));
-  Serial.println(doredirect);
-#endif
-
-  if (doredirect)
-  {
-    Serial.println(F("<- Request redirected to captive portal"));
-    server.sendHeader(F("Location"), (String)F("http://") + serverLoc, true); // @HTTPHEAD send redirect
-    server.send(302, "text/plain", "");                                       // Empty content inhibits Content-length header so we have to close the socket ourselves.
-    server.client().stop();                                                   // Stop is needed because we sent no content length
-    return true;
-  }
-  return false;
-}
 
 int _numNetworks = 0;                   // init index for numnetworks wifiscans
 unsigned long _lastscan = 0;            // ms for timing wifi scans
@@ -265,24 +238,6 @@ String processor(const String &var)
   return toRet;
 }
 
-// Should help with the transition to AsyncWebServer
-String replacer(PGM_P content)
-{
-  String toRet = String(content);
-
-  toRet.replace(F("%TITLE%"), processor("TITLE"));
-  toRet.replace(F("%AUTO_REFRESH_B%"), processor("AUTO_REFRESH_B"));
-  toRet.replace(F("%HOST%"), processor("HOST"));
-  toRet.replace(F("%SSID%"), processor("SSID"));
-  toRet.replace(F("%WiFiRSSI%"), processor("WiFiRSSI"));
-  toRet.replace(F("%MAC%"), processor("MAC"));
-  toRet.replace(F("%BLUETTI_ID%"), processor("BLUETTI_ID"));
-  toRet.replace(F("%BT_FILE_LOG%"), processor("BT_FILE_LOG"));
-  toRet.replace(F("%DEBUG_INFOS%"), processor("DEBUG_INFOS"));
-
-  return toRet;
-}
-
 #pragma region Async Ws handlers
 
 void update_root()
@@ -338,13 +293,11 @@ void update_root()
 #if DEBUG <= 4
   Serial.println(jsonString); // print the string for debugging.
 #endif
-  webSocket.broadcastTXT(jsonString); // send the JSON object through the websocket
+  webSocket.textAll(jsonString); // send the JSON object through the websocket
 }
 
-void root_HTML()
+void root_HTML(AsyncWebServerRequest *request)
 {
-  if (captivePortal())
-    return; // If captive portal redirect instead of displaying the page
 #if DEBUG <= 4
   Serial.print(F("handleRoot() running on core "));
   Serial.println(xPortGetCoreID());
@@ -367,27 +320,29 @@ void root_HTML()
   writeLog(toLog);
 
   // Replace tags in the html template before sending it to the client
-  server.send(200, "text/html; charset=utf-8", replacer(index_html));
+  request->send_P(200, "text/html; charset=utf-8", index_html, processor);
 }
 
-void notFound()
+void notFound(AsyncWebServerRequest *request)
 {
-  if (captivePortal())
-    return; // If captive portal redirect instead of displaying the page
+  bool isPost = true;
+
+  if (request->methodToString() == "GET")
+    isPost = false;
 
   String message = "File Not Found\n\n";
   message += "URI: ";
-  message += server.uri();
+  message += request->url();
   message += "\nMethod: ";
-  message += (server.method() == HTTP_GET) ? "GET" : "POST";
+  message += request->methodToString();
   message += "\nArguments: ";
-  message += server.args();
+  message += request->args();
   message += "\n";
-  for (uint8_t i = 0; i < server.args(); i++)
+  for (uint8_t i = 0; i < request->args(); i++)
   {
-    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
+    message += " " + request->getParam(i)->name() + ": " + request->getParam(i)->value() + "\n";
   }
-  server.send(404, "text/plain", message);
+  request->send(404, "text/plain", message);
 }
 
 void handleBTCommand(String topic, String payloadData)
@@ -426,28 +381,29 @@ void handleBTCommand(String topic, String payloadData)
 const char *PARAM_TYPE = "type";
 const char *PARAM_VAL = "value";
 
-void command_HTML()
+void command_HTML(AsyncWebServerRequest *request)
 {
 
   String topic = "";
   String payload = "";
+  bool isPost = true;
 
-  if (server.hasArg(PARAM_TYPE))
-  {
-    topic = server.arg(PARAM_TYPE);
-  }
-  if (server.hasArg(PARAM_VAL))
-  {
-    payload = server.arg(PARAM_VAL);
-  }
+  if (request->methodToString() == "GET")
+    isPost = false;
+
+  if (request->hasParam(PARAM_TYPE, isPost))
+    topic = request->getParam(PARAM_TYPE, isPost)->value();
+
+  if (request->hasParam(PARAM_VAL, isPost))
+    payload = request->getParam(PARAM_VAL, isPost)->value();
 
   if (topic == "" || payload == "")
   {
-    server.send(200, "text/plain", "command data invalid: " + String(PARAM_TYPE) + " " + topic + " - " + String(PARAM_VAL) + " " + payload);
+    request->send(200, "text/plain", "command data invalid: " + String(PARAM_TYPE) + " " + topic + " - " + String(PARAM_VAL) + " " + payload);
   }
   else
   {
-    server.send(200, "text/plain", "Hello, POST: " + String(PARAM_TYPE) + " " + topic + " - " + String(PARAM_VAL) + " " + payload);
+    request->send(200, "text/plain", "Hello, POST: " + String(PARAM_TYPE) + " " + topic + " - " + String(PARAM_VAL) + " " + payload);
 
     handleBTCommand(topic, payload);
   }
@@ -548,68 +504,42 @@ String processor_config(const String &var)
   return toRet;
 }
 
-// Should help with the transition to AsyncWebServer
-String replacer_config(PGM_P content)
-{
-  String toRet = String(content);
-
-#ifdef IFTTT
-  toRet.replace(F("%IFTTT%"), IFTTT_html);
-#else
-  toRet.replace(F("%IFTTT%"), F(""));
-#endif
-
-  toRet.replace(F("%TITLE%"), processor_config("TITLE"));
-  toRet.replace(F("%PARAM_SAVED%"), processor_config("PARAM_SAVED"));
-  toRet.replace(F("%RESTART_REQUIRED%"), processor_config("RESTART_REQUIRED"));
-  toRet.replace(F("%BLUETTI_DEVICE_ID%"), processor_config("BLUETTI_DEVICE_ID"));
-  toRet.replace(F("%WIFI_SCAN%"), processor_config("WIFI_SCAN"));
-  toRet.replace(F("%B_APMODE%"), processor_config("B_APMODE"));
-  toRet.replace(F("%SSID%"), processor_config("SSID"));
-  toRet.replace(F("%PASSWORD%"), processor_config("PASSWORD"));
-  toRet.replace(F("%B_USE_IFTT%"), processor_config("B_USE_IFTT"));
-  toRet.replace(F("%IFTT_KEY%"), processor_config("IFTT_KEY"));
-  toRet.replace(F("%IFTT_EVENT_LOW%"), processor_config("IFTT_EVENT_LOW"));
-  toRet.replace(F("%IFTT_LOW_BL%"), processor_config("IFTT_LOW_BL"));
-  toRet.replace(F("%IFTT_EVENT_HIGH%"), processor_config("IFTT_EVENT_HIGH"));
-  toRet.replace(F("%IFTT_HIGH_BL%"), processor_config("IFTT_HIGH_BL"));
-  toRet.replace(F("%B_SHOW_DEBUG_INFOS%"), processor_config("B_SHOW_DEBUG_INFOS"));
-  toRet.replace(F("%B_USE_DBG_FILE_LOG%"), processor_config("B_USE_DBG_FILE_LOG"));
-  toRet.replace(F("%BTLOGTIME_START%"), processor_config("BTLOGTIME_START"));
-  toRet.replace(F("%BTLOGTIME_STOP%"), processor_config("BTLOGTIME_STOP"));
-  toRet.replace(F("%B_CLRSPIFF_ON_RST%"), processor_config("B_CLRSPIFF_ON_RST"));
-
-  return toRet;
-}
-
-void config_HTML(bool paramsSaved = false, bool resetRequired = false)
+void config_HTML(AsyncWebServerRequest *request, bool paramsSaved = false, bool resetRequired = false)
 {
   b_paramsSaved = paramsSaved;
   b_resetRequired = resetRequired;
 
-  server.send(200, "text/html; charset=utf-8", replacer_config(config_html));
+  String tmp = config_html;
+#ifdef IFTTT
+  tmp.replace(F("%IFTTT%"), IFTTT_html);
+#else
+  tmp.replace(F("%IFTTT%"), F(""));
+#endif
 
-  if (resetRequired)
-  {
-    delay(2000);
-    ESP.restart();
-  }
+  // server.send(200, "text/html; charset=utf-8", replacer_config(config_html));
+  request->send_P(200, "text/html; charset=utf-8", tmp.c_str(), processor_config);
+
+  _rebootDevice = resetRequired;
 }
 
-void config_POST()
+void config_POST(AsyncWebServerRequest *request)
 {
   bool resetRequired = false;
 
-  char tmp[40];
-  strcpy(tmp, server.arg("bluetti_device_id").c_str());
+  bool isPost = true;
 
-  if (strcmp(tmp, wifiConfig.bluetti_device_id.c_str()) != 0)
+  if (request->methodToString() == "GET")
+    isPost = false;
+
+  String tmp = request->getParam("bluetti_device_id", isPost)->value();
+
+  if (tmp.compareTo(wifiConfig.bluetti_device_id) != 0)
   {
-    wifiConfig.bluetti_device_id = server.arg("bluetti_device_id");
+    wifiConfig.bluetti_device_id = tmp;
     resetRequired = true;
   }
 
-  if (server.hasArg("APMode"))
+  if (request->hasParam("APMode", isPost))
   {
     if (wifiConfig.APMode != true)
     {
@@ -627,29 +557,29 @@ void config_POST()
   }
 
   char tmp1[50];
-  strcpy(tmp1, server.arg("ssid").c_str());
+  strcpy(tmp1, request->getParam("ssid", isPost)->value().c_str());
   if (strcmp(tmp1, wifiConfig.ssid.c_str()) != 0)
   {
-    wifiConfig.ssid = server.arg("ssid");
+    wifiConfig.ssid = request->getParam("ssid", isPost)->value();
     resetRequired = true;
   }
-  strcpy(tmp1, server.arg("password").c_str());
+  strcpy(tmp1, request->getParam("password", isPost)->value().c_str());
   if (strcmp(tmp1, wifiConfig.password.c_str()) != 0)
   {
-    wifiConfig.password = server.arg("password");
+    wifiConfig.password = request->getParam("password", isPost)->value();
     resetRequired = true;
   }
 
 #ifdef IFTTT
   // IFTT (no restart required)
-  if (server.hasArg("useIFTT"))
+  if (request->hasParam("useIFTT", isPost))
   {
     wifiConfig.useIFTT = true;
-    wifiConfig.IFTT_Key = server.arg("IFTT_Key");
-    wifiConfig.IFTT_Event_low = server.arg("IFTT_Event_low");
-    wifiConfig.IFTT_low_bl = server.arg("IFTT_low_bl").toInt();
-    wifiConfig.IFTT_Event_high = server.arg("IFTT_Event_high");
-    wifiConfig.IFTT_high_bl = server.arg("IFTT_high_bl").toInt();
+    wifiConfig.IFTT_Key = request->getParam("IFTT_Key", isPost)->value();
+    wifiConfig.IFTT_Event_low = request->getParam("IFTT_Event_low", isPost)->value();
+    wifiConfig.IFTT_low_bl = request->getParam("IFTT_low_bl", isPost)->value().toInt();
+    wifiConfig.IFTT_Event_high = request->getParam("IFTT_Event_high", isPost)->value();
+    wifiConfig.IFTT_high_bl = request->getParam("IFTT_high_bl", isPost)->value().toInt();
   }
   else
   {
@@ -657,26 +587,26 @@ void config_POST()
   }
 #endif
 
-  wifiConfig.showDebugInfos = server.hasArg("showDebugInfos");
-  wifiConfig._useBTFilelog = server.hasArg("_useBTFilelog");
-  wifiConfig.useDbgFilelog = server.hasArg("useDbgFilelog");
-  wifiConfig.BtLogTime_Start = server.arg("BtLogTime_Start");
-  wifiConfig.BtLogTime_Stop = server.arg("BtLogTime_Stop");
+  wifiConfig.showDebugInfos = request->hasParam("showDebugInfos", isPost);
+  wifiConfig._useBTFilelog = request->hasParam("_useBTFilelog", isPost);
+  wifiConfig.useDbgFilelog = request->hasParam("useDbgFilelog", isPost);
+  wifiConfig.BtLogTime_Start = request->getParam("BtLogTime_Start", isPost)->value();
+  wifiConfig.BtLogTime_Stop = request->getParam("BtLogTime_Stop", isPost)->value();
 
-  if (server.hasArg("clrSpiffOnRst"))
+  if (request->hasParam("clrSpiffOnRst", isPost))
   {
     wifiConfig.clrSpiffOnRst = true;
     resetRequired = true;
   }
 
-  // Save configuration to Eprom
+  // Save configuration to Preferences
   saveConfig();
 
   // Config Data Updated, refresh the page
-  config_HTML(true, resetRequired);
+  config_HTML(request, true, resetRequired);
 }
 
-void invertBT_HTML()
+void invertBT_HTML(AsyncWebServerRequest *request)
 {
   bool restartToReconnect = false;
   if (isBTconnected())
@@ -685,14 +615,14 @@ void invertBT_HTML()
   }
   else
   {
-    // IF BLE didn't create memory issues
-     manualDisconnect = false;
-     doScan = true;
-     initBluetooth();//restart the scan task
+    // IF BLE didn't\ create memory issues
+    manualDisconnect = false;
+    doScan = true;
+    initBluetooth(); // restart the scan task
   }
 
-  server.send(200, "text/html",
-              "<html><body onload='location.href=\"./\"';></body></html>");
+  request->send(200, "text/html",
+                "<html><body onload='location.href=\"./\"';></body></html>");
 
   if (restartToReconnect)
   {
@@ -700,55 +630,48 @@ void invertBT_HTML()
   }
 }
 
-void showDebugLog_HTML()
+void showDebugLog_HTML(AsyncWebServerRequest *request)
 {
   // File Download instead of show
-  File download = SPIFFS.open("/debug_log.txt", FILE_READ);
-  server.sendHeader("Content-Type", "text/text");
-  server.sendHeader("Content-Disposition", "attachment; filename=debug_log.txt");
-  server.sendHeader("Connection", "close");
-  server.streamFile(download, "application/octet-stream");
-  download.close();
+  request->send(SPIFFS, "/debug_log.txt", "text/text", true);
 }
 
-void showDataLog_HTML()
+void showDataLog_HTML(AsyncWebServerRequest *request)
 {
   // File Download instead of show
-  File download = SPIFFS.open("/bluetti_data.json", FILE_READ);
-  server.sendHeader("Content-Type", "text/text"); // Return as text
-  server.sendHeader("Content-Disposition", "attachment; filename=bluetti_data.json");
-  server.sendHeader("Connection", "close");
-  server.streamFile(download, "application/octet-stream");
-  download.close();
+  request->send(SPIFFS, "/bluetti_data.json", "text/text", true);
 }
 
-void webSocketEvent(byte num, WStype_t type, uint8_t *payload, size_t length)
+void onWebSocketEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
 {
   switch (type)
   {
-  case WStype_DISCONNECTED: // enum that read status this is used for debugging.
-    Serial.print("WS Type ");
-    Serial.print(type);
-    Serial.println(": DISCONNECTED");
-    break;
-  case WStype_CONNECTED: // Check if a WebSocket client is connected or not
-    Serial.print("WS Type ");
-    Serial.print(type);
-    Serial.println(": CONNECTED");
+  case WS_EVT_CONNECT:
+    Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
     update_root(); // update the webpage accordingly
     break;
-  case WStype_TEXT:   // check responce from client
-    Serial.println(); // the payload variable stores the status internally
-    Serial.println(payload[0]);
+  case WS_EVT_DISCONNECT:
+    Serial.printf("WebSocket client #%u disconnected\n", client->id());
+    break;
+  case WS_EVT_DATA:
     // TODO: instead of post command
-    //  if (payload[0] == '1') {
-    //    pin_status = "ON";
-    //    digitalWrite(22, HIGH);
-    //  }
-    //  if (payload[0] == '0') {
-    //    pin_status = "OFF";
-    //    digitalWrite(22, LOW);
-    //  }
+    // AwsFrameInfo *info = (AwsFrameInfo *)arg;
+    // if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT)
+    // {
+    //   data[len] = 0;
+    //   message = (char *)data;
+    //   steps = message.substring(0, message.indexOf("&"));
+    //   direction = message.substring(message.indexOf("&") + 1, message.length());
+    //   Serial.print("steps");
+    //   Serial.println(steps);
+    //   Serial.print("direction");
+    //   Serial.println(direction);
+    //   notifyClients(direction);
+    //   newRequest = true;
+    // }
+    break;
+  case WS_EVT_PONG:
+  case WS_EVT_ERROR:
     break;
   }
 }
@@ -758,26 +681,23 @@ void setWebHandles()
   // WebServerConfig
   server.on("/", HTTP_GET, root_HTML);
 
-  server.on("/rebootDevice", HTTP_GET, []()
+  server.on("/rebootDevice", HTTP_GET, [](AsyncWebServerRequest *request)
             {
-    server.send(200, "text/plain", "reboot in 2sec"); //TODO: add js to reload homepage
+    request->send(200, "text/plain", "reboot in 2sec");
     writeLog("Device Reboot requested!");
     disconnectBT();//Gracefully disconnect from BT
-    delay(2000);
-    ESP.restart(); });
+    _rebootDevice = true; });
 
-  server.on("/resetWifiConfig", HTTP_GET, []()
+  server.on("/resetWifiConfig", HTTP_GET, [](AsyncWebServerRequest *request)
             {
-    server.send(200, "text/plain", "reset Wifi and reboot in 2sec");//TODO: add js to reload homepage
-    delay(2000);
-    initBWifi(true); });
+    request->send(200, "text/plain", "reset Wifi and reboot in 2sec");
+    _resetWifiConfig = true; });
 
-  server.on("/resetConfig", HTTP_GET, []()
+  server.on("/resetConfig", HTTP_GET, [](AsyncWebServerRequest *request)
             {
-    server.send(200, "text/plain", "reset FULL CONFIG and reboot in 2sec"); //TODO: add js to reload homepage
+    request->send(200, "text/plain", "reset FULL CONFIG and reboot in 2sec");
     resetConfig();
-    delay(2000);
-    ESP.restart(); });
+    _rebootDevice = true; });
 
   // Commands come in with a form to the /post endpoint
   server.on("/post", HTTP_POST, command_HTML);
@@ -785,8 +705,8 @@ void setWebHandles()
   // server.on("/get", HTTP_GET, command_HTML);
 
   // endpoints to update the config WITHOUT reset
-  server.on("/config", HTTP_GET, []()
-            { config_HTML(false); });
+  server.on("/config", HTTP_GET, [](AsyncWebServerRequest *request)
+            { config_HTML(request, false); });
   server.on("/config", HTTP_POST, config_POST);
 
   // BTDisconnect //TODO: post only with JS... when the html code is in a separate file
@@ -794,28 +714,54 @@ void setWebHandles()
 
   server.on("/debugLog", HTTP_GET, showDebugLog_HTML);
 
-  server.on("/clearLog", HTTP_GET, []()
+  server.on("/clearLog", HTTP_GET, [](AsyncWebServerRequest *request)
             {
               clearLog();
-              server.send(200, "text/plain", "Log Cleared"); });
+              request->send(200, "text/plain", "Log Cleared"); });
 
-  server.on("/clearBtData", HTTP_GET, []()
+  server.on("/clearBtData", HTTP_GET, [](AsyncWebServerRequest *request)
             {
               clearBtData();
-              server.send(200, "text/plain", "BtData Cleared"); });
+              request->send(200, "text/plain", "BtData Cleared"); });
 
   server.on("/dataLog", HTTP_GET, showDataLog_HTML);
 
   server.onNotFound(notFound);
 
-  ElegantOTA.begin(&server); // Start ElegantOTA
-  server.begin();
+  webSocket.onEvent(onWebSocketEvent); // Register WS event handler
+  server.addHandler(&webSocket);
 
-  webSocket.begin();                 // init the Websocketserver
-  webSocket.onEvent(webSocketEvent); // init the webSocketEvent function when a websocket event occurs
+  AsyncElegantOTA.begin(&server); // Start AsyncElegantOTA
+  server.begin();
 }
 
 #pragma endregion Async Ws handlers
+
+class CaptiveRequestHandler : public AsyncWebHandler
+{
+public:
+  CaptiveRequestHandler()
+  {
+    setWebHandles(); // Routes that are managed and don't need to be redirected
+  }
+  virtual ~CaptiveRequestHandler() {}
+
+  bool canHandle(AsyncWebServerRequest *request)
+  {
+    // request->addInterestingHeader("ANY");
+    return true;
+  }
+
+  void handleRequest(AsyncWebServerRequest *request)
+  {
+    Serial.println(F("<- Request redirected to captive portal"));
+
+    AsyncResponseStream *response = request->beginResponseStream("text/plain");
+    response->setCode(302);
+    response->addHeader(F("Location"), (String)F("http://") + WiFi.softAPIP().toString());
+    request->send(response);
+  }
+};
 
 void wifiConnect(bool resetWifi)
 {
@@ -875,6 +821,7 @@ void wifiConnect(bool resetWifi)
     /* Setup the DNS server redirecting all the domains to the apIP */
     dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
     dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
+    server.addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER); // only when requested from AP
   }
 }
 
@@ -892,7 +839,8 @@ void initBWifi(bool resetWifi)
 
   wifiConnect(resetWifi);
 
-  setWebHandles();
+  if (!doCaptivePortal)
+    setWebHandles();
 
   Serial.println(F("HTTP server started"));
   writeLog("HTTP server started");
@@ -931,14 +879,13 @@ void handleWebserver()
     }
   }
 
-  server.handleClient();
-
-  webSocket.loop(); // websocket server methode that handles all Client
   if ((unsigned long)(millis() - webSockeUpdate) >= DEVICE_STATE_UPDATE * 1000)
   {
     update_root();             // Update the root page with the latest data
     webSockeUpdate = millis(); // Use the snapshot to set track time until next event
   }
+
+  webSocket.cleanupClients();
 }
 
 String runningSince;

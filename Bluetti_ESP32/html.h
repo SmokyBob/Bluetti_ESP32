@@ -66,7 +66,7 @@ const char index_html[] PROGMEM = R"rawliteral(
     }
 
     .slider.round:before {
-      border-radius: 50%;
+      border-radius: 50%%;
     }
 
     /*BtConnected Rows*/
@@ -83,7 +83,7 @@ const char index_html[] PROGMEM = R"rawliteral(
 
 <body>
   %AUTO_REFRESH_B%
-  <table id="tblData" border="0" style="width:100%;max-width:900px">
+  <table id="tblData" border="0" style="width:100%%;max-width:900px">
     <tbody>
       <tr>
         <td>host:</td>
@@ -179,7 +179,7 @@ const char index_html[] PROGMEM = R"rawliteral(
   var Socket;
   
   function init() {
-    Socket = new WebSocket('ws://' + window.location.hostname + ':81/');
+    Socket = new WebSocket('ws://' + window.location.hostname + '/ws');
     var timeout = setTimeout(function() {
         timedOut = true;
         
@@ -295,7 +295,7 @@ const char bt_log_Link_html[] PROGMEM = R"rawliteral(
 const char debugInfos_html[] PROGMEM = R"rawliteral(      
       <tr>
         <td>Free Heap (Bytes):</td>
-        <td><span id='FREE_HEAP'>waiting ...</span> of <span id='TOTAL_HEAP'>waiting ...</span> (<span id='PERC_HEAP'>waiting ...</span> %)</td>
+        <td><span id='FREE_HEAP'>waiting ...</span> of <span id='TOTAL_HEAP'>waiting ...</span> (<span id='PERC_HEAP'>waiting ...</span> %%)</td>
       </tr>
       <tr>
         <td>Alloc Heap / Min Free Alloc Heap(Bytes):</td>
@@ -307,7 +307,7 @@ const char debugInfos_html[] PROGMEM = R"rawliteral(
       </tr>
       <tr>
         <td>SPIFFS Used (Bytes):</td>
-        <td><span id='SPIFFS_USED'>waiting ...</span> of <span id='SPIFFS_TOTAL'>waiting ...</span> (<span id='SPIFFS_PERC'>waiting ...</span> %)</td>
+        <td><span id='SPIFFS_USED'>waiting ...</span> of <span id='SPIFFS_TOTAL'>waiting ...</span> (<span id='SPIFFS_PERC'>waiting ...</span> %%)</td>
       </tr>
       <tr>
         <td colspan="3">
@@ -333,7 +333,7 @@ const char config_html[] PROGMEM = R"rawliteral(
     <span style='font-weight:bold;color:red;%PARAM_SAVED%'>Configuration Saved.
       <span id='restartRequired' style="%RESTART_REQUIRED%">Restart required (will be done in 2 second)</span>
     </span><br/><br/>
-    <table border="0" style="width:100%;max-width:800px">
+    <table border="0" style="width:100%%;max-width:900px">
       <tbody>
         <tr>
           <td>Bluetti device id:</td>

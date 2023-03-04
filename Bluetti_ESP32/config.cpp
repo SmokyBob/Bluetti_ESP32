@@ -2,6 +2,9 @@
 #include "config.h"
 #include <Preferences.h>
 
+bool _rebootDevice = false;
+bool _resetWifiConfig = false;
+
 ESPBluettiSettings wifiConfig;
 
 Preferences prf_config;

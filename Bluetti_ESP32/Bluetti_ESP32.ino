@@ -48,6 +48,20 @@ unsigned long serialTick = 0;
 
 void loop()
 {
+  if (_rebootDevice)
+  {
+    // Device Reboot requested from the UI
+    delay(2000);
+    ESP.restart();
+  }
+
+  if (_resetWifiConfig)
+  {
+    // Reset Wifi config from the UI
+    delay(2000);
+    initBWifi(true);
+  }
+  
   if (!wifiConfig.APMode && wifiConfig.ssid.length() > 0 && WiFi.status() != WL_CONNECTED)
   {
     Serial.println(F("Wifi Not connected! Reconnecting"));

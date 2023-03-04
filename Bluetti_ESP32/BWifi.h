@@ -8,8 +8,6 @@ extern String runningSince;
 
 extern void initBWifi(bool resetWifi);
 extern void handleWebserver();
-void handleNotFound();
-void handleRoot();
 extern void wifiConnect(bool resetWifi);
 
 #endif

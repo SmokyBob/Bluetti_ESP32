@@ -75,4 +75,8 @@ extern void readConfigs();
 
 extern void saveConfig();
 
+// Vars to handle commands received from the web that require delays
+extern bool _rebootDevice;
+extern bool _resetWifiConfig;
+
 #endif
