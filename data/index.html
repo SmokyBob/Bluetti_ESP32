@@ -1,0 +1,88 @@
+<html>
+
+<head>
+  <title>%TITLE%</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- no icon e style here because if connected to BLE we end up without memory :-( -->
+  <link rel="icon" href="./favicon.png">
+  <link rel="stylesheet" href="./styles.css">
+
+</head>
+
+<body>
+  %AUTO_REFRESH_B%
+  <table id="tblData" border="0" style="width:100%%;max-width:900px">
+    <tbody>
+      <tr>
+        <td>host:</td>
+        <td>%HOST%</td>
+        <td><a href="#" onclick="jsCall('./rebootDevice',2500)">Reboot this device</a></td>
+      </tr>
+      <tr>
+        <td>SSID:</td>
+        <td>%SSID%</td>
+        <td><a href="./resetWifiConfig" >Reset WIFI config</a></td>
+      </tr>
+      <tr>
+        <td>WiFiRSSI:</td>
+        <td>%WiFiRSSI%</td>
+        <td><b><a href="./config">Change Configuration</a></b></td>
+      </tr>
+      <tr>
+        <td>MAC:</td>
+        <td>%MAC%</td>
+        <td><b><a style="color:red" href="./update" target="_blank">OTA Update</a></b></td>
+      </tr>
+      <tr>
+        <td>uptime :</td>
+        <td id="UPTIME"></td>
+        <td>Running since: <span id="RUNNING_SINCE">waiting ...</span></td>
+      </tr>
+      <tr>
+        <td>uptime (d):</td>
+        <td id="UPTIME_D">waiting ...</td>
+        <td>Last WebSocket message at: <span id="lastWebSocketTime">waiting ...</span></td>
+      </tr>
+      <tr>
+        <td>Bluetti device id:</td>
+        <td>%BLUETTI_ID%</td>
+        %BT_FILE_LOG%
+      </tr>
+      <tr>
+        <td>BT connected: </td>
+        <td><input id="btConnected" class="chkBtConnected" type="checkbox" onclick="return false;"></td>
+        <td>
+          <input id="btnInvertConnect" type="button" onclick="jsCall('./btConnectionInvert');"
+            value="Disconnect from BT">
+        </td>
+      </tr>
+      <tr>
+        <td>BT last message time:</td>
+        <td id="BT_LAST_MEX_TIME">waiting ...</td>
+        <td style="vertical-align: middle;" class="btConnected">
+          <div style="display:inline-flex">
+            Ac Output:
+            <label class="switch">
+              <input id="chk_AC_OUTPUT_ON" type="checkbox" onclick="onCheckChanged('AC_OUTPUT_ON',this);"
+                %B_AC_OUTPUT_ON%>
+              <span class="slider round"></span>
+            </label>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="3">
+          <hr>
+        </td>
+      </tr>
+      %DEBUG_INFOS%
+      <tr>
+        <td colspan="4" class="btConnected"><b>Device States</b></td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+
+<script src="./index.js"></script>
+
+</html>

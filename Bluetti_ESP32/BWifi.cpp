@@ -12,7 +12,6 @@
 #endif
 #include <ESPAsyncWebServer.h>
 #include <DNSServer.h>
-#include "html.h"
 #include <AsyncElegantOTA.h>
 
 AsyncWebServer server(80);
@@ -27,6 +26,22 @@ void resetConfig()
   ESPBluettiSettings defaults;
   wifiConfig = defaults;
   saveConfig();
+}
+
+String getFileContent(const char *path)
+{
+  String toRet;
+  File file = SPIFFS.open(path, FILE_READ);
+  if (!file)
+  {
+    toRet = "";
+  }
+  else
+  {
+    toRet = file.readString();
+  }
+  file.close();
+  return toRet;
 }
 
 bool doCaptivePortal = false;
@@ -122,7 +137,9 @@ String getScanItemOut()
   int n = _numNetworks;
   if (n == 0)
   {
-    rows += wifiNoNet_html; // No Networks
+    rows += R"rawliteral(
+            <tr><td>No networks found. Refresh to scan again.</td></tr>
+          )rawliteral"; // No Networks
   }
   else
   {
@@ -162,7 +179,8 @@ String getScanItemOut()
     }
 
     // Base Row
-    const String HTTP_ITEM_STR = wifiRow_html;
+    const String WIFI_ITEM_STR = getFileContent("/templates/wifi_item.html");
+    ;
 
     // build networks rows for display
     for (int i = 0; i < n; i++)
@@ -173,7 +191,7 @@ String getScanItemOut()
       uint8_t enc_type = WiFi.encryptionType(indices[i]);
 
       // if (_minimumQuality == -1 || _minimumQuality < rssiperc) {
-      String item = HTTP_ITEM_STR;
+      String item = WIFI_ITEM_STR;
       if (WiFi.SSID(indices[i]) == "")
       {
         // Serial.println(WiFi.BSSIDstr(indices[i]));
@@ -224,14 +242,16 @@ String processor(const String &var)
   {
     if (wifiConfig._useBTFilelog)
     {
-      toRet = bt_log_Link_html;
+      toRet = R"rawliteral(
+                <td><a href="./dataLog" target="_blank" class="btConnected">Bluetti data Log</a></td>
+              )rawliteral";
     }
   }
   else if (var == F("DEBUG_INFOS"))
   {
     if (wifiConfig.showDebugInfos)
     {
-      toRet = debugInfos_html;
+      toRet = getFileContent("/templates/debug_info.html");
     }
   }
 
@@ -254,6 +274,13 @@ void update_root()
   jsonString += "\"FREE_HEAP\" : \"" + String(ESP.getFreeHeap()) + "\"" + ",";
   jsonString += "\"TOTAL_HEAP\" : \"" + String(ESP.getHeapSize()) + "\"" + ",";
   jsonString += "\"PERC_HEAP\" : \"" + String((float(ESP.getFreeHeap()) / float(ESP.getHeapSize())) * 100) + "\"" + ",";
+
+  if (((float(ESP.getFreeHeap()) / float(ESP.getHeapSize())) * 100) > 90 && wifiConfig.useDbgFilelog)
+  {
+    writeLog(F("SPIFFS usage over 90%. Log disabled"));
+    wifiConfig.useDbgFilelog = false; // Disable Spiffs log
+    saveConfig();
+  }
 
   jsonString += "\"MAX_ALLOC\" : \"" + String(ESP.getMaxAllocHeap()) + "\"" + ",";
   jsonString += "\"MIN_ALLOC\" : \"" + String(ESP.getMinFreeHeap()) + "\"" + ",";
@@ -319,8 +346,17 @@ void root_HTML(AsyncWebServerRequest *request)
   toLog = toLog + "Alloc Heap (Bytes): " + ESP.getMaxAllocHeap() + " Min Free Heap (Bytes):" + ESP.getMinFreeHeap();
   writeLog(toLog);
 
-  // Replace tags in the html template before sending it to the client
-  request->send_P(200, "text/html; charset=utf-8", index_html, processor);
+  String html = getFileContent("/index.html");
+
+  if (html.length() == 0)
+  {
+    request->send(200, "text/text; charset=utf-8", "index.html not found");
+  }
+  else
+  {
+    // Replace tags in the html template before sending it to the client
+    request->send_P(200, "text/html; charset=utf-8", html.c_str(), processor);
+  }
 }
 
 void notFound(AsyncWebServerRequest *request)
@@ -424,14 +460,14 @@ String processor_config(const String &var)
   {
     if (!b_paramsSaved)
     {
-      toRet = F("display:none");
+      toRet = F("hide");
     }
   }
   else if (var == F("RESTART_REQUIRED"))
   {
     if (!b_resetRequired)
     {
-      toRet = F("display:none");
+      toRet = F("hide");
     }
   }
   else if (var == F("BLUETTI_DEVICE_ID"))
@@ -509,15 +545,22 @@ void config_HTML(AsyncWebServerRequest *request, bool paramsSaved = false, bool 
   b_paramsSaved = paramsSaved;
   b_resetRequired = resetRequired;
 
-  String tmp = config_html;
-#ifdef IFTTT
-  tmp.replace(F("%IFTTT%"), IFTTT_html);
-#else
-  tmp.replace(F("%IFTTT%"), F(""));
-#endif
+  String html = getFileContent("/config.html");
 
-  // server.send(200, "text/html; charset=utf-8", replacer_config(config_html));
-  request->send_P(200, "text/html; charset=utf-8", tmp.c_str(), processor_config);
+  if (html.length() == 0)
+  {
+    request->send(200, "text/text; charset=utf-8", "config.html not found");
+  }
+  else
+  {
+#ifdef IFTTT
+    html.replace(F("%IFTTT%"), getFileContent("/templates/IFTTT.html"));
+#else
+    html.replace(F("%IFTTT%"), F(""));
+#endif
+    // Replace tags in the html template before sending it to the client
+    request->send_P(200, "text/html; charset=utf-8", html.c_str(), processor_config);
+  }
 
   _rebootDevice = resetRequired;
 }
@@ -676,10 +719,27 @@ void onWebSocketEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsE
   }
 }
 
+void streamFile(String filepath, String mime)
+{
+  File dataFile = SPIFFS.open(filepath, "r");
+
+  dataFile.close();
+}
+
 void setWebHandles()
 {
   // WebServerConfig
   server.on("/", HTTP_GET, root_HTML);
+
+  // Static from SPIFFS
+  server.on("/favicon.png", HTTP_GET, [](AsyncWebServerRequest *request)
+            { request->send(SPIFFS, "/favicon.png", "image/png", false, nullptr); });
+
+  server.on("/styles.css", HTTP_GET, [](AsyncWebServerRequest *request)
+            { request->send(SPIFFS, "/styles.css", "text/css", false, nullptr); });
+
+  server.on("/index.js", HTTP_GET, [](AsyncWebServerRequest *request)
+            { request->send(SPIFFS, "/index.js", "text/javascript", false, nullptr); });
 
   server.on("/rebootDevice", HTTP_GET, [](AsyncWebServerRequest *request)
             {
