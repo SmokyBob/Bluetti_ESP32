@@ -729,17 +729,9 @@ void streamFile(String filepath, String mime)
 void setWebHandles()
 {
   // WebServerConfig
+  server.serveStatic("/", SPIFFS, "/"); //Try the FS first for static files
+
   server.on("/", HTTP_GET, root_HTML);
-
-  // Static from SPIFFS
-  server.on("/favicon.png", HTTP_GET, [](AsyncWebServerRequest *request)
-            { request->send(SPIFFS, "/favicon.png", "image/png", false, nullptr); });
-
-  server.on("/styles.css", HTTP_GET, [](AsyncWebServerRequest *request)
-            { request->send(SPIFFS, "/styles.css", "text/css", false, nullptr); });
-
-  server.on("/index.js", HTTP_GET, [](AsyncWebServerRequest *request)
-            { request->send(SPIFFS, "/index.js", "text/javascript", false, nullptr); });
 
   server.on("/rebootDevice", HTTP_GET, [](AsyncWebServerRequest *request)
             {
