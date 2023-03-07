@@ -729,7 +729,7 @@ void streamFile(String filepath, String mime)
 void setWebHandles()
 {
   // WebServerConfig
-  server.serveStatic("/", SPIFFS, "/"); //Try the FS first for static files
+  server.serveStatic("/", SPIFFS, "/"); // Try the FS first for static files
 
   server.on("/", HTTP_GET, root_HTML);
 
@@ -840,15 +840,13 @@ void wifiConnect(bool resetWifi)
     {
       delay(500);
       Serial.print(F("."));
-      if ((millis() - connectTimeout) > (DEVICE_STATE_UPDATE * 1000))
+      if ((millis() - connectTimeout) > (DEVICE_STATE_UPDATE * 1000 * 10))
       {
-        Serial.println("Wifi Not connected with ssid: " + wifiConfig.ssid + " ! Reset config");
-        writeLog("Wifi Not connected with ssid: " + wifiConfig.ssid + " ! Reset config");
+        Serial.println("Wifi Not connected with ssid: " + wifiConfig.ssid + " ! Force AP Mode");
+        writeLog("Wifi Not connected with ssid: " + wifiConfig.ssid + " ! Force AP Mode");
         wifiConfig.APMode = true;
-        wifiConfig.ssid = "";
-        wifiConfig.password = "";
         saveConfig();
-        ESP.restart();
+        break;
       }
     }
     Serial.println(F(""));
@@ -860,7 +858,8 @@ void wifiConnect(bool resetWifi)
       Serial.println(F("MDNS responder started"));
     }
   }
-  else
+
+  if (wifiConfig.APMode || wifiConfig.ssid.length() == 0)
   {
 
     //  Start AP MODE
