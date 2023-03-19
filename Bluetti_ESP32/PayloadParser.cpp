@@ -6,6 +6,7 @@
 #endif
 #include "utils.h"
 #include "BTooth.h"
+#include "BWifi.h"
 
 uint16_t parse_uint_field(uint8_t data[])
 {
@@ -261,12 +262,15 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
       // Save data to file for later use
       saveBTData(jsonString);
 
-      #ifdef IFTTT
+#ifdef IFTTT
       if (wifiConfig.IFTT_low_bl != 0)
       {
         // Low Battery Notification (not charging)
         if (curr_TOTAL_BATTERY_PERCENT <= wifiConfig.IFTT_low_bl && curr_AC_INPUT_POWER <= 1)
         {
+          // Turn off Ac_output if it's on
+          handleBTCommand("AC_OUTPUT_ON", "0");
+
           makeIFTTTRequest("low");
         }
       }
@@ -279,7 +283,7 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
           makeIFTTTRequest("high");
         }
       }
-      #endif
+#endif
     }
   }
 
