@@ -1,20 +1,23 @@
 ## About
-This is an ESP32 based Bluetooth to MQTT Bride for BLUETTI power stations. The project is based on https://github.com/warhammerkid/bluetti_mqtt
-The code is tested on a AC300. Other Powerstations should also work but are untested yet. The discussion on https://diysolarforum.com/threads/monitoring-bluetti-systems.37870/ was a great help for understanding the protocol. 
+This is an ESP32 based Bluetooth Web Server for BLUETTI power stations. The project is based on https://github.com/warhammerkid/bluetti_mqtt and further development from https://github.com/mariolukas/Bluetti_ESP32_Bridge (thanks to all the contributors there).
+
+The code is tested on a some devices listed below. Other Powerstations should also work but are untested yet. The discussion on https://diysolarforum.com/threads/monitoring-bluetti-systems.37870/ was a great help for understanding the protocol. 
 
 ## Features
 
 * easy configuration with WiFi manager
-* mqtt support
+* IFTT support for low and high battery level commands
+* BT Disconnect and Reconnet without device reboot
 * support for BLUETTI power stations
   * AC300 (tested) 
-  * AC200 (untested)
-  * EB3A (untested) 
+  * AC200 (tested)
+  * EB3A (testes) 
   * EP500 (untested)
   * EP500P (untested)
 * supported BLUETTI functions
   * commands
     * ac output on/off
+      * Directly from the page
     * dc output on/off
   * states
     * ac input power
@@ -36,99 +39,88 @@ The code is tested on a AC300. Other Powerstations should also work but are unte
 
 You will need to install a board support package for your ESP32. Additionally the follwing libraries are needed: 
 
-* https://github.com/tzapu/WiFiManager
-* https://github.com/knolleary/pubsubclient
+* https://github.com/ayushsharma82/AsyncElegantOTA
+* https://github.com/me-no-dev/ESPAsyncWebServer
+* https://github.com/me-no-dev/AsyncTCP/archive
 
 Change the partition scheme with Tools -> Partition Scheme to 
  	
 * Minimal SPIFFS (1.9 MB App with OTA/ 190KB SPIFFS)
- 
-![Wifi Manager start menu](doc/images/partition.png)
-
-This setting is required because the Bluetooth stack already uses a lot of the ESP32 memory. 
 
 Optional: Do changes in config.h file. The device can be set by changing 'BLUETTI_TYPE'. 
 
 Finally upload the Sketch to your ESP32.
-
-*INFO*: Until now only BLUETTI_AC300 was tested. If you own one of the supported devices please let me know if it works.
+TODO: instruction to upload the data folder with Arduino IDE
 
 #### PlatformIO
 
-Compiling
-```
-$ pio run
-```
+Fastest way is to use VSCode and PlatformIO extension.
 
-Flashing Factory Image
-```
-$ esptool.py write_flash 0x0 build/Bluetti_ESP32_Bridge.factory.bin 
-```
+Build and Upload commands in the UI will let you load the firmware to the device.
 
-Updating only App (don't delete settings)
-```
-# Write Partition A
-$ esptool.py write_flash 0x10000 build/Bluetti_ESP32_Bridge.ota.bin
-...
-# Write Partition B
-$ esptool.py write_flash 0x1F0000 build/Bluetti_ESP32_Bridge.ota.bin
-```
+The HTML related files are in the /data folder and can be uploaded with the extension (see a more detailed [guide](https://randomnerdtutorials.com/esp32-vs-code-platformio-spiffs/) )
 
-The configuration interface also offers OTA updates. You can flash also `build/Bluetti_ESP32_Bridge.ota.bin` there.
 
 ### Usage
 
 Just connect the ESP32 to a power supply or the power station itself. Connect your mobile phone or computer
-to the Wifi mangaer of the ESP32 firmware, it should show up as "ESP32_Bluetti".
+to the Wifi manager of the ESP32 firmware, it should show up as "BLUETTI-ESP32".
 
 After the connection to the hotspot is established a wifi manager popup will appear. Otherwise
-open 192.168.4.1 in your local webbrowser. 
+open http://192.168.4.1 or http://bluetti-esp32.local/ in your local webbrowser. 
 
-Select "Configure WiFi"
+![init](doc/images/first_start.png)
 
-![Wifi Manager start menu](doc/images/wifi_manager.png)
+Select "Change Configuration" (will take some time to load as a wifi scan is running)
 
-Configure your WiFi and set the address of your MQTT server and enter the Bluetooth ID of your 
+![init](doc/images/config.png)
+
+1. enter the Bluetooth ID of your 
 Bluetti Device. You can use a mobile phone and/or the Bluetti APP for finding the correct Bluetooth ID of your device.
+2. Select the wifi network and configure the password, or Start in AP Mode wo keep creating the BLUETTI-ESP32 wifi network
+3. Select use IFTT and set the various WebHooks parameters if needed (TODO: more details on how to set up WebHooks in a supported manner)
+4. Select if devug infos show be shown in the main page
+5. Enable debug log to file inside SPIFFS (can be downloaded from the main page)
+6. Set when to start and stop logging to file all the Bluetti Data  (can be downloaded from the main page)
+7. Clear all log files on reboot (if clearing them from the main page fails)
 
-![Wifi Manager start menu](doc/images/wifi_setup.png)
+Save the settings
 
-Save the settings. The ESP32 starts sending messages to your MQTT server. 
+**WARNING**
 
-Example ( ioBroker ):
-![MQTT ioBroker](doc/images/iobroker.png)
+Most of the settings do no require a device reboot, but some (wifi, clear all logs) do.
+Reset Full Configuration will clear all configs and reboot the device like it was just flashed
+Bluetti data log can fill up the remaining SPIFFS space pretty quick (around 1 log every 5 seconds), and a full SPIFFS makes the device unstable, **BE CAREFULL**
 
-### MQTT Topics
+### IFTT
+TODO: detailed config
 
-#### Commands
-Commands are subscribed from 
+Low Battery percentage will be triggered every 5 minutes if no ac_input_power is detected and the percentage is <= the configured percentage.
+If AC output is ON, will be forced OFF (TODO: check in config)
 
-* /bluetti/<your_device_id>/command
-  * ac_output_on
-  * dc_output_on
+High Battery percentage will be triggered every 2 minutes if ac_input_power IS detected and the percentage is >= the configured percentage.
 
-#### State
-States are published to 
-* /bluetti/<your_device_id>/state
-  * ac_output_on
-  * dc_output_on
-  * dc_input_power
-  * ac_input_power
-  * ac_output_power
-  * dc_output_power
-  * serial
-  * dsp_version
-  * arm_version
-  * power_generation
-  * total_battery_percent
-  
+----
+Going back to home after a succesfull connection
+![init](doc/images/home_after_setup.png)
 
-## TODO
+The ac Output slider will turn on/off the ac output (n.b. might seem to rever back in the ui, wait 5 / 10 secs for a BT update from the device).
 
-* add full feature set to device files
-* adding support for OLED display
-* adding support for SD-Card reader, for writing csv data to an sd-card
-* adding logging poll commands
+Updates are sent using WebSockets, so no refresh is needed (you can check and force a refresh if last WebSocket message was received more than 5 / 10 secs from the current time).
+
+### OTA UPDATE
+Elagant ota update can be accessed from the OTA UPDATE link in the main page.
+Firmware (build/firwmare.bin) and file System (build/spiffs.bin) can be uploaded. (N.B. a reboot will be performed after each upload)
+    
+
+
+
+### TODOS:
+- more details for ifft config
+- more configs for hardcoded behaviours (es. ac off on low battery)
+- more detaild on build flags in config
+- auto stop bluetti data log when SPIFFS over 95% ... and maybe a notification
+- code refactor
 
 ## Disclaimer
 
