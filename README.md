@@ -118,7 +118,7 @@ Firmware (build/firwmare.bin) and file System (build/spiffs.bin) can be uploaded
 ### TODOS:
 - more details for ifft config
 - more configs for hardcoded behaviours (es. ac off on low battery)
-- more detaild on build flags in config
+- more details on build flags in config
 - auto stop bluetti data log when SPIFFS over 95% ... and maybe a notification
 - code refactor
 
