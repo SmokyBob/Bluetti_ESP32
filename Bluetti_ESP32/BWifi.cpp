@@ -300,20 +300,23 @@ void update_root()
   jsonString = jsonString.substring(0, jsonString.length() - 1);
   jsonString += "},";
   String lastWebSocketTime = runningSince;
-  struct tm timeinfo;
-  if (!getLocalTime(&timeinfo, DEVICE_STATE_UPDATE * 1000))
+  if (!wifiConfig.APMode && wifiConfig.ssid.length() > 0)
   {
-    Serial.println(F("Failed to obtain time"));
-  }
-  else
-  {
-    // Save start time as string in the preferred format
-    // Full param list
-    // https://cplusplus.com/reference/ctime/strftime/
-    char buffer[80];
-    strftime(buffer, 80, "%F %T", &timeinfo); // ISO
+    struct tm timeinfo;
+    if (!getLocalTime(&timeinfo, DEVICE_STATE_UPDATE * 1000))
+    {
+      Serial.println(F("Failed to obtain time"));
+    }
+    else
+    {
+      // Save start time as string in the preferred format
+      // Full param list
+      // https://cplusplus.com/reference/ctime/strftime/
+      char buffer[80];
+      strftime(buffer, 80, "%F %T", &timeinfo); // ISO
 
-    lastWebSocketTime = String(buffer);
+      lastWebSocketTime = String(buffer);
+    }
   }
 
   jsonString += "\"lastWebSocketTime\" : \"" + lastWebSocketTime + "\"" + "}";

@@ -25,14 +25,14 @@ void readConfigs()
   wifiConfig.ssid = prf_config.getString("ssid", "");
   wifiConfig.password = prf_config.getString("password", "");
 
-  #ifdef IFTTT
+#ifdef IFTTT
   wifiConfig.useIFTT = prf_config.getBool("useIFTT", false);
   wifiConfig.IFTT_Key = prf_config.getString("IFTT_Key", "");
   wifiConfig.IFTT_Event_low = prf_config.getString("IFTT_Event_low", "");
   wifiConfig.IFTT_low_bl = prf_config.getShort("IFTT_low_bl", 0);
   wifiConfig.IFTT_Event_high = prf_config.getString("IFTT_Event_high", "");
   wifiConfig.IFTT_high_bl = prf_config.getShort("IFTT_high_bl", 0);
-  #endif
+#endif
 
   wifiConfig.showDebugInfos = prf_config.getBool("showDebugInfos", false);
   wifiConfig.useDbgFilelog = prf_config.getBool("useDbgFilelog", false);
@@ -58,14 +58,14 @@ void saveConfig()
   prf_config.putString("ssid", wifiConfig.ssid);
   prf_config.putString("password", wifiConfig.password);
 
-  #ifdef IFTTT
+#ifdef IFTTT
   prf_config.putBool("useIFTT", wifiConfig.useIFTT);
   prf_config.putString("IFTT_Key", wifiConfig.IFTT_Key);
   prf_config.putString("IFTT_Event_low", wifiConfig.IFTT_Event_low);
   prf_config.putShort("IFTT_low_bl", wifiConfig.IFTT_low_bl);
   prf_config.putString("IFTT_Event_high", wifiConfig.IFTT_Event_high);
   prf_config.putShort("IFTT_high_bl", wifiConfig.IFTT_high_bl);
-  #endif
+#endif
 
   prf_config.putBool("showDebugInfos", wifiConfig.showDebugInfos);
   prf_config.putBool("useDbgFilelog", wifiConfig.useDbgFilelog);

@@ -240,10 +240,13 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
         writeLog("Reconnecting to BT in 2 secs");
         disconnectBT();
         delay(2 * 1000);
-        writeLog("-------------------");
-        ESP.restart();
-        return; // wait for next correct data
+        // Reinit BT connection
+        manualDisconnect = false;
+        doScan = true;
+        initBluetooth(); // restart the scan task
+        return;          // wait for next correct data
       }
+        // Save max and min data
 #if DEBUG <= 5
       writeLog("Bluetti data received");
 #endif
