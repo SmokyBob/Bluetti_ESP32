@@ -97,6 +97,13 @@ function processCommand(event) {
     //it's ok
   }
 
+  document.getElementById('BATT_PERC_MIN').innerHTML = obj.BATT_PERC_MIN;
+  document.getElementById('BATT_PERC_MAX').innerHTML = obj.BATT_PERC_MAX;
+  document.getElementById('DC_INPUT_MAX').innerHTML = obj.DC_INPUT_MAX;
+  document.getElementById('DC_OUTPUT_MAX').innerHTML = obj.DC_OUTPUT_MAX;
+  document.getElementById('AC_INPUT_MAX').innerHTML = obj.AC_INPUT_MAX;
+  document.getElementById('AC_OUTPUT_MAX').innerHTML = obj.AC_OUTPUT_MAX;
+
   document.getElementById('lastWebSocketTime').innerHTML = obj.lastWebSocketTime;
 
   for (var key in obj.bluetti_state_data) {

@@ -62,6 +62,9 @@
     .btConnected {
       display:none;
     }
-    .btConnected.checked{
+    td.btConnected.checked{
       display:table-cell;
+    }
+    tr.btConnected.checked{
+      display:table-row;
     }

@@ -260,6 +260,13 @@ String processor(const String &var)
 
 #pragma region Async Ws handlers
 
+int BATT_PERC_MIN = 100;
+int BATT_PERC_MAX = 0;
+int DC_INPUT_MAX = 0;
+int DC_OUTPUT_MAX = 0;
+int AC_INPUT_MAX = 0;
+int AC_OUTPUT_MAX = 0;
+
 void update_root()
 {
   String jsonString = "{";
@@ -288,6 +295,53 @@ void update_root()
   jsonString += "\"SPIFFS_USED\" : \"" + String(SPIFFS.usedBytes()) + "\"" + ",";
   jsonString += "\"SPIFFS_TOTAL\" : \"" + String(SPIFFS.totalBytes()) + "\"" + ",";
   jsonString += "\"SPIFFS_PERC\" : \"" + String((float(SPIFFS.usedBytes()) / float(SPIFFS.totalBytes())) * 100) + "\"" + ",";
+
+  jsonString += "\"SPIFFS_TOTAL\" : \"" + String(SPIFFS.totalBytes()) + "\"" + ",";
+
+  int tmpInt = bluetti_state_data[TOTAL_BATTERY_PERCENT].f_value.toInt();
+
+  if (BATT_PERC_MIN > tmpInt && tmpInt != 0)
+  {
+    BATT_PERC_MIN = tmpInt;
+  }
+  jsonString += "\"BATT_PERC_MIN\" : \"" + String(BATT_PERC_MIN) + "\"" + ",";
+  if (BATT_PERC_MAX < tmpInt)
+  {
+    BATT_PERC_MAX = tmpInt;
+  }
+  jsonString += "\"BATT_PERC_MAX\" : \"" + String(BATT_PERC_MAX) + "\"" + ",";
+
+  tmpInt = bluetti_state_data[DC_INPUT_POWER].f_value.toInt();
+
+  if (DC_INPUT_MAX < tmpInt)
+  {
+    DC_INPUT_MAX = tmpInt;
+  }
+  jsonString += "\"DC_INPUT_MAX\" : \"" + String(DC_INPUT_MAX) + "\"" + ",";
+
+  tmpInt = bluetti_state_data[DC_OUTPUT_POWER].f_value.toInt();
+
+  if (DC_OUTPUT_MAX < tmpInt)
+  {
+    DC_OUTPUT_MAX = tmpInt;
+  }
+  jsonString += "\"DC_OUTPUT_MAX\" : \"" + String(DC_OUTPUT_MAX) + "\"" + ",";
+
+  tmpInt = bluetti_state_data[AC_INPUT_POWER].f_value.toInt();
+
+  if (AC_INPUT_MAX < tmpInt)
+  {
+    AC_INPUT_MAX = tmpInt;
+  }
+  jsonString += "\"AC_INPUT_MAX\" : \"" + String(AC_INPUT_MAX) + "\"" + ",";
+
+  tmpInt = bluetti_state_data[AC_OUTPUT_POWER].f_value.toInt();
+
+  if (AC_OUTPUT_MAX < tmpInt)
+  {
+    AC_OUTPUT_MAX = tmpInt;
+  }
+  jsonString += "\"AC_OUTPUT_MAX\" : \"" + String(AC_OUTPUT_MAX) + "\"" + ",";
 
   jsonString += "\"bluetti_state_data\" : {";
   for (int i = 0; i < sizeof(bluetti_state_data) / sizeof(device_field_data_t); i++)
