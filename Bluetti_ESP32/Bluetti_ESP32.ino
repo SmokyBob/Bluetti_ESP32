@@ -61,7 +61,7 @@ void loop()
     delay(2000);
     initBWifi(true);
   }
-  
+
   if (!wifiConfig.APMode && wifiConfig.ssid.length() > 0 && WiFi.status() != WL_CONNECTED)
   {
     Serial.println(F("Wifi Not connected! Reconnecting"));

@@ -897,7 +897,7 @@ void wifiConnect(bool resetWifi)
     {
       delay(500);
       Serial.print(F("."));
-      if ((millis() - connectTimeout) > (DEVICE_STATE_UPDATE * 1000 * 10))
+      if ((millis() - connectTimeout) > (60 * 1000 * 5))
       {
         Serial.println("Wifi Not connected with ssid: " + wifiConfig.ssid + " ! Force AP Mode");
         writeLog("Wifi Not connected with ssid: " + wifiConfig.ssid + " ! Force AP Mode");
