@@ -274,7 +274,7 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
           // Turn off Ac_output if it's on
           handleBTCommand("AC_OUTPUT_ON", "0");
 
-          makeIFTTTRequest("low");
+          makeIFTTTRequest("low",curr_TOTAL_BATTERY_PERCENT);
         }
       }
 
@@ -283,7 +283,7 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
         // Battery Charged (and charging)
         if (curr_TOTAL_BATTERY_PERCENT >= wifiConfig.IFTT_high_bl && curr_AC_INPUT_POWER > 0)
         {
-          makeIFTTTRequest("high");
+          makeIFTTTRequest("high",curr_TOTAL_BATTERY_PERCENT);
         }
       }
 #endif

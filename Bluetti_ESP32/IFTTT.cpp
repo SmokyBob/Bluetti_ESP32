@@ -11,7 +11,7 @@
 const char *IFTTT_Server = "maker.ifttt.com";
 
 // BASE IFTT address (parameters replaced)
-const String base_address = "/trigger/{event}/json/with/key/{key}";
+const String base_address = "/trigger/{event}/with/key/{key}?value1={value1}";
 
 unsigned long millis_low = 0;
 const long min_wait_low = 5;
@@ -19,7 +19,7 @@ unsigned long millis_high = 0;
 const long min_wait_high = 2;
 
 // Make an HTTP request to the IFTTT web service
-void makeIFTTTRequest(String event)
+void makeIFTTTRequest(String event, uint16_t battPerc)
 {
   long curr_wait;
   long curr_millis;
@@ -65,7 +65,8 @@ void makeIFTTTRequest(String event)
       {
         String currAddr = base_address;
         currAddr.replace("{key}", wifiConfig.IFTT_Key);
-        
+        currAddr.replace("{value1}", String(battPerc));
+
         if (event == "low")
         {
           if (wifiConfig.IFTT_Event_low.length() > 0)
@@ -96,18 +97,9 @@ void makeIFTTTRequest(String event)
         {
           reqClient.println(String("GET ") + currAddr + " HTTP/1.1");
 
-          // Temperature in Celsius
-          // String jsonObject = String("{\"value1\":\"") + bme.readTemperature() + "\",\"value2\":\"" + (bme.readPressure()/100.0F)
-          //                     + "\",\"value3\":\"" + bme.readHumidity() + "\"}";
-
           reqClient.println(String("Host: ") + IFTTT_Server);
           reqClient.println(F("Connection: close"));
           reqClient.println();
-          // reqClient.println(F("Connection: close\r\nContent-Type: application/json"));
-          // reqClient.print(F("Content-Length: "));
-          // reqClient.println(jsonObject.length());
-
-          // reqClient.println(jsonObject);
 
           int timeout = 5; // 5 seconds
           while (!!!reqClient.available() && (timeout-- > 0))
