@@ -5,6 +5,13 @@
 #include <esp_task_wdt.h>
 #include "WiFi.h"
 
+#if USE_TEMPERATURE_SENSOR == 1
+#include "SHT2x.h"
+
+SHT2x tempSensor;
+
+#endif
+
 void setup()
 {
   Serial.begin(115200);
@@ -14,6 +21,10 @@ void setup()
   Serial.println(F("deactivate relais contact"));
 #endif
   digitalWrite(RELAIS_PIN, RELAIS_LOW);
+#endif
+
+#if USE_TEMPERATURE_SENSOR == 1
+  tempSensor.begin(TEMPERATURE_SDA_PIN, TEMPERATURE_SCL_PIN);
 #endif
 
   // Init time
@@ -82,6 +93,11 @@ void loop()
       {
         esp_task_wdt_reset(); // Reset WDT every 5 secs in
       }
+#if USE_TEMPERATURE_SENSOR == 1
+      tempSensor.read();
+      temperature = tempSensor.getTemperature();
+      humidity = tempSensor.getHumidity();
+#endif
 
       serialTick = millis();
     }

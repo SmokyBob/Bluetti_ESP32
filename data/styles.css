@@ -68,3 +68,7 @@
     tr.btConnected.checked{
       display:table-row;
     }
+
+    .temperature_sensor{
+      display:none;
+    }

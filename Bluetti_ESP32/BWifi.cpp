@@ -266,6 +266,10 @@ int DC_INPUT_MAX = 0;
 int DC_OUTPUT_MAX = 0;
 int AC_INPUT_MAX = 0;
 int AC_OUTPUT_MAX = 0;
+#if USE_TEMPERATURE_SENSOR == 1
+float TEMPERATURE_MAX = 0.00;
+float HUMIDITY_MAX = 0.00;
+#endif
 
 void update_root()
 {
@@ -342,6 +346,25 @@ void update_root()
     AC_OUTPUT_MAX = tmpInt;
   }
   jsonString += "\"AC_OUTPUT_MAX\" : \"" + String(AC_OUTPUT_MAX) + "\"" + ",";
+
+#if USE_TEMPERATURE_SENSOR == 1
+  jsonString += "\"TEMPERATURE_CURRENT\" : \"" + String(temperature) + "\"" + ",";
+
+  if (TEMPERATURE_MAX < temperature)
+  {
+    TEMPERATURE_MAX = temperature;
+  }
+  jsonString += "\"TEMPERATURE_MAX\" : \"" + String(TEMPERATURE_MAX) + "\"" + ",";
+
+  jsonString += "\"HUMIDITY_CURRENT\" : \"" + String(humidity) + "\"" + ",";
+
+  if (HUMIDITY_MAX < humidity)
+  {
+    HUMIDITY_MAX = humidity;
+  }
+  jsonString += "\"HUMIDITY_MAX\" : \"" + String(HUMIDITY_MAX) + "\"" + ",";
+
+#endif
 
   jsonString += "\"bluetti_state_data\" : {";
   for (int i = 0; i < sizeof(bluetti_state_data) / sizeof(device_field_data_t); i++)
@@ -897,7 +920,7 @@ void wifiConnect(bool resetWifi)
     {
       delay(500);
       Serial.print(F("."));
-      if ((millis() - connectTimeout) > (60 * 1000 * 5))
+      if ((millis() - connectTimeout) > (5 * 60 * 1000))
       {
         Serial.println("Wifi Not connected with ssid: " + wifiConfig.ssid + " ! Force AP Mode");
         writeLog("Wifi Not connected with ssid: " + wifiConfig.ssid + " ! Force AP Mode");

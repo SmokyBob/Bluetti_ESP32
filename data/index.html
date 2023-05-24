@@ -6,7 +6,9 @@
   <!-- no icon e style here because if connected to BLE we end up without memory :-( -->
   <link rel="icon" href="./favicon.png">
   <link rel="stylesheet" href="./styles.css">
-
+  <!-- Temperature and humidity icons -->
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,1,0" />
 </head>
 
 <body>
@@ -84,6 +86,14 @@
         <td>Battery Percent (MAX) <span id="BATT_PERC_MAX">waiting ...</span></td>
         <td>DC Output (MAX) <span id="DC_OUTPUT_MAX">waiting ...</span></td>
         <td>AC Output (MAX) <span id="AC_OUTPUT_MAX">waiting ...</span></td>
+      </tr>
+      <tr class="temperature_sensor">
+        <td><span class="material-symbols-outlined">thermometer</span> <span id="TEMPERATURE_CURRENT">waiting ...</span>
+          (MAX) <span id="TEMPERATURE_MAX">waiting...</span></td>
+        <td><span class="material-symbols-outlined">humidity_percentage</span> <span id="HUMIDITY_CURRENT">waiting
+            ...</span>
+          (MAX) <span id="HUMIDITY_MAX">waiting...</span></td>
+        <td></td>
       </tr>
       <tr>
         <td colspan="3">

@@ -16,9 +16,13 @@
 #define DEVICE_STATE_UPDATE 5
 
 #define RELAISMODE 0
-#define RELAIS_PIN 22
+#define RELAIS_PIN 23
 #define RELAIS_LOW LOW
 #define RELAIS_HIGH HIGH
+
+#define USE_TEMPERATURE_SENSOR 1 //Set to 0 for no STH* / HUT21 temp sensor
+#define TEMPERATURE_SDA_PIN 21
+#define TEMPERATURE_SCL_PIN 22
 
 #define MAX_DISCONNECTED_TIME_UNTIL_REBOOT 2 // device will reboot when wlan/BT is not connectet within x Minutes
 
@@ -78,5 +82,10 @@ extern void saveConfig();
 // Vars to handle commands received from the web that require delays
 extern bool _rebootDevice;
 extern bool _resetWifiConfig;
+
+#if USE_TEMPERATURE_SENSOR == 1
+extern float temperature;
+extern float humidity;
+#endif
 
 #endif

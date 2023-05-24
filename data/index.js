@@ -104,6 +104,15 @@ function processCommand(event) {
   document.getElementById('AC_INPUT_MAX').innerHTML = obj.AC_INPUT_MAX;
   document.getElementById('AC_OUTPUT_MAX').innerHTML = obj.AC_OUTPUT_MAX;
 
+  if (obj.TEMPERATURE_CURRENT != null) {
+    //show temperature row
+    document.getElementsByClassName("temperature_sensor")[0].style.display = "table-row";
+    document.getElementById('TEMPERATURE_CURRENT').innerHTML = obj.TEMPERATURE_CURRENT;
+    document.getElementById('TEMPERATURE_MAX').innerHTML = obj.TEMPERATURE_MAX;
+    document.getElementById('HUMIDITY_CURRENT').innerHTML = obj.HUMIDITY_CURRENT;
+    document.getElementById('HUMIDITY_MAX').innerHTML = obj.HUMIDITY_MAX;
+  }
+
   document.getElementById('lastWebSocketTime').innerHTML = obj.lastWebSocketTime;
 
   for (var key in obj.bluetti_state_data) {

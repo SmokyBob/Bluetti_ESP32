@@ -5,6 +5,11 @@
 bool _rebootDevice = false;
 bool _resetWifiConfig = false;
 
+#if USE_TEMPERATURE_SENSOR == 1
+float temperature = 0.00;
+float humidity = 0.00;
+#endif
+
 ESPBluettiSettings wifiConfig;
 
 Preferences prf_config;
