@@ -20,9 +20,13 @@
 #define RELAIS_LOW LOW
 #define RELAIS_HIGH HIGH
 
-#define USE_TEMPERATURE_SENSOR 1 //Set to 0 for no STH* / HUT21 temp sensor
+#define USE_TEMPERATURE_SENSOR 1 // Set to 0 for no STH* / HUT21 temp sensor
 #define TEMPERATURE_SDA_PIN 21
 #define TEMPERATURE_SCL_PIN 22
+
+#define USE_EXT_BAT 1 // Set to 0 for External battery
+#define VOLT_PIN 36   // SP o VP
+#define PWM_SWITCH_PIN 18
 
 #define MAX_DISCONNECTED_TIME_UNTIL_REBOOT 2 // device will reboot when wlan/BT is not connectet within x Minutes
 
@@ -59,6 +63,12 @@ typedef struct
   String IFTT_Event_high = ""; // If "" no event triggered
   uint8_t IFTT_high_bl = 0;
 #endif
+
+#if USE_EXT_BAT == 1
+  float volt_Switch_off = 12.0;
+  float volt_Switch_ON = 12.6;
+  uint8_t volt_MAX_BLUETT_PERC = 80;
+#endif
   // Root Page configs
   bool showDebugInfos = false; // shows FreeHeap, debugLog Link, etc...
   // Logging
@@ -86,6 +96,14 @@ extern bool _resetWifiConfig;
 #if USE_TEMPERATURE_SENSOR == 1
 extern float temperature;
 extern float humidity;
+#endif
+
+#if USE_EXT_BAT == 1
+extern float vref;
+extern float curr_EXT_Voltage;
+extern bool _pwm_switch_status;
+extern float getVoltage();
+extern void setSwitch(bool bON);
 #endif
 
 #endif

@@ -4,12 +4,15 @@
 #include "BluettiConfig.h"
 #include <esp_task_wdt.h>
 #include "WiFi.h"
-
 #if USE_TEMPERATURE_SENSOR == 1
 #include "SHT2x.h"
+#endif
+#if USE_EXT_BAT == 1
+#include "esp_adc_cal.h"
+#endif
 
+#if USE_TEMPERATURE_SENSOR == 1
 SHT2x tempSensor;
-
 #endif
 
 void setup()
@@ -21,6 +24,14 @@ void setup()
   Serial.println(F("deactivate relais contact"));
 #endif
   digitalWrite(RELAIS_PIN, RELAIS_LOW);
+#endif
+
+#if USE_EXT_BAT == 1
+  pinMode(PWM_SWITCH_PIN, OUTPUT);
+  // Voltage measurements calibration
+  esp_adc_cal_characteristics_t adc_chars;
+  esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, 1100, &adc_chars);
+  vref = adc_chars.vref; // Obtain the device ADC reference voltage
 #endif
 
 #if USE_TEMPERATURE_SENSOR == 1
@@ -98,7 +109,10 @@ void loop()
       temperature = tempSensor.getTemperature();
       humidity = tempSensor.getHumidity();
 #endif
-
+#if USE_EXT_BAT == 1
+      curr_EXT_Voltage = getVoltage();
+      Serial.printf("Voltage %.2f \n", curr_EXT_Voltage);
+#endif
       serialTick = millis();
     }
   }

@@ -246,7 +246,7 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
         initBluetooth(); // restart the scan task
         return;          // wait for next correct data
       }
-        // Save max and min data
+      // Save max and min data
 #if DEBUG <= 5
       writeLog("Bluetti data received");
 #endif
@@ -274,7 +274,7 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
           // Turn off Ac_output if it's on
           handleBTCommand("AC_OUTPUT_ON", "0");
 
-          makeIFTTTRequest("low",curr_TOTAL_BATTERY_PERCENT);
+          makeIFTTTRequest("low", curr_TOTAL_BATTERY_PERCENT);
         }
       }
 
@@ -283,9 +283,36 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
         // Battery Charged (and charging)
         if (curr_TOTAL_BATTERY_PERCENT >= wifiConfig.IFTT_high_bl && curr_AC_INPUT_POWER > 0)
         {
-          makeIFTTTRequest("high",curr_TOTAL_BATTERY_PERCENT);
+          makeIFTTTRequest("high", curr_TOTAL_BATTERY_PERCENT);
         }
       }
+#endif
+#if USE_EXT_BAT == 1
+      bool bOn = false;
+      if (curr_EXT_Voltage >= 0)
+      {
+        if (wifiConfig.volt_Switch_off >= curr_EXT_Voltage)
+        {
+          // Low Ext Battery, No DC Power in to Bluetty
+          bOn = false;
+        }
+        if (wifiConfig.volt_Switch_ON <= curr_EXT_Voltage)
+        {
+          // EXT Battery Level Ok, DC Power in to Bluetty
+          bOn = true;
+        }
+        if (wifiConfig.volt_MAX_BLUETT_PERC <= curr_TOTAL_BATTERY_PERCENT)
+        {
+          // Bluetty battery Charged, No DC Power in to Bluetty
+          bOn = false;
+        }
+      }
+      // Change mosfwt pwm switch in needed
+      if (bOn != _pwm_switch_status)
+      {
+        setSwitch(bOn);
+      }
+
 #endif
     }
   }

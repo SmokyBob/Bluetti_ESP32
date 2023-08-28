@@ -10,6 +10,43 @@ float temperature = 0.00;
 float humidity = 0.00;
 #endif
 
+#if USE_EXT_BAT == 1
+float vref = 1100;
+float curr_EXT_Voltage = 18.3;
+bool _pwm_switch_status = false;
+float getVoltage()
+{
+
+  float calibration = 1.1074; // Adjust for ultimate accuracy when input is measured using an accurate DVM, if reading too high then use e.g. 0.99, too low use 1.01
+
+  // R1 10k, R2 2.2k, output 3.3v e fatto calcolare input massimo = 18.3, massimo a batteria piena sono 14.6 (lifepo4)
+  float voltage = (float)analogRead(VOLT_PIN) / 4095 // Risoluzione ADC
+                  * 18.3                             // Voltaggio massimo
+                  * (1100 / vref)                    // Offset calibrazione
+                  * (2200                            // Resistenza calcolata
+                     / 2200                          // Resistenza reale
+                     ) *
+                  calibration;
+
+  return voltage;
+};
+
+void setSwitch(bool bON)
+{
+  if (bON)
+  {
+    digitalWrite(PWM_SWITCH_PIN, HIGH);
+  }
+  else
+  {
+    digitalWrite(PWM_SWITCH_PIN, LOW);
+  }
+  _pwm_switch_status = bON;
+
+  Serial.printf("pwm_switch set to: %s \n", String(_pwm_switch_status));
+};
+#endif
+
 ESPBluettiSettings wifiConfig;
 
 Preferences prf_config;
