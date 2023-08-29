@@ -113,6 +113,12 @@ function processCommand(event) {
     document.getElementById('HUMIDITY_MAX').innerHTML = obj.HUMIDITY_MAX;
   }
 
+  if (obj.CURR_EXT_VOLTAGE != null) {
+    document.getElementsByClassName("ext_battery")[0].style.display = "table-row";
+    document.getElementById('CURR_EXT_VOLTAGE').innerHTML = obj.CURR_EXT_VOLTAGE;
+    document.getElementById('PWM_SWITCH_STATUS').innerHTML = obj.PWM_SWITCH_STATUS;
+  }
+
   document.getElementById('lastWebSocketTime').innerHTML = obj.lastWebSocketTime;
 
   for (var key in obj.bluetti_state_data) {

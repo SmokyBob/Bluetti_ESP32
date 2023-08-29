@@ -307,6 +307,8 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
           bOn = false;
         }
       }
+      Serial.printf("Voltage %.2f \n", curr_EXT_Voltage);
+      Serial.printf("pwm_switch_status %s transition to %s \n", String(_pwm_switch_status),String(bOn));
       // Change mosfwt pwm switch in needed
       if (bOn != _pwm_switch_status)
       {

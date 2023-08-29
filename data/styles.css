@@ -60,15 +60,27 @@
 
     /*BtConnected Rows*/
     .btConnected {
-      display:none;
-    }
-    td.btConnected.checked{
-      display:table-cell;
-    }
-    tr.btConnected.checked{
-      display:table-row;
+      display: none;
     }
 
-    .temperature_sensor{
-      display:none;
+    td.btConnected.checked {
+      display: table-cell;
+    }
+
+    tr.btConnected.checked {
+      display: table-row;
+    }
+
+    .temperature_sensor {
+      display: none;
+    }
+
+    .ext_battery {
+      display: none;
+    }
+
+    [id='TOTAL_BATTERY_PERCENT'] {
+      font-weight: bolder;
+      /*Green*/
+      color: #689f38;
     }

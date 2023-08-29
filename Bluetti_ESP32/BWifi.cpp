@@ -365,6 +365,17 @@ void update_root()
   jsonString += "\"HUMIDITY_MAX\" : \"" + String(HUMIDITY_MAX) + "\"" + ",";
 
 #endif
+#if USE_EXT_BAT == 1
+  jsonString += "\"CURR_EXT_VOLTAGE\" : \"" + String(curr_EXT_Voltage) + "\"" + ",";
+
+  String pwm_str = "OFF";
+
+  if (_pwm_switch_status)
+  {
+    pwm_str = "ON";
+  }
+  jsonString += "\"PWM_SWITCH_STATUS\" : \"" + pwm_str + "\"" + ",";
+#endif
 
   jsonString += "\"bluetti_state_data\" : {";
   for (int i = 0; i < sizeof(bluetti_state_data) / sizeof(device_field_data_t); i++)
@@ -596,6 +607,20 @@ String processor_config(const String &var)
     toRet = wifiConfig.IFTT_high_bl;
   }
 #endif
+#if USE_EXT_BAT == 1
+  else if (var == F("VOLT_SWITCH_OFF"))
+  {
+    toRet = wifiConfig.volt_Switch_off;
+  }
+  else if (var == F("VOLT_SWITCH_ON"))
+  {
+    toRet = wifiConfig.volt_Switch_ON;
+  }
+  else if (var == F("VOLT_MAX_BLUETT_PERC"))
+  {
+    toRet = wifiConfig.volt_MAX_BLUETT_PERC;
+  }
+#endif
   else if (var == F("B_SHOW_DEBUG_INFOS"))
   {
     toRet = (wifiConfig.showDebugInfos) ? "checked" : "";
@@ -637,6 +662,11 @@ void config_HTML(AsyncWebServerRequest *request, bool paramsSaved = false, bool 
     html.replace(F("%IFTTT%"), getFileContent("/templates/IFTTT.html"));
 #else
     html.replace(F("%IFTTT%"), F(""));
+#endif
+#ifdef USE_EXT_BAT
+    html.replace(F("%EXT_BAT%"), getFileContent("/templates/EXT_BAT.html"));
+#else
+    html.replace(F("%EXT_BAT%"), F(""));
 #endif
     // Replace tags in the html template before sending it to the client
     request->send_P(200, "text/html; charset=utf-8", html.c_str(), processor_config);
@@ -708,6 +738,11 @@ void config_POST(AsyncWebServerRequest *request)
   {
     wifiConfig.useIFTT = false;
   }
+#endif
+#if USE_EXT_BAT == 1
+  wifiConfig.volt_Switch_off = request->getParam("volt_Switch_off", isPost)->value().toFloat();
+  wifiConfig.volt_Switch_ON = request->getParam("volt_Switch_ON", isPost)->value().toFloat();
+  wifiConfig.volt_MAX_BLUETT_PERC = request->getParam("volt_MAX_BLUETT_PERC", isPost)->value().toInt();
 #endif
 
   wifiConfig.showDebugInfos = request->hasParam("showDebugInfos", isPost);
