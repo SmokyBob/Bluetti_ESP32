@@ -288,8 +288,8 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
       }
 #endif
 #if USE_EXT_BAT == 1
-      bool bOn = false;
-      if (curr_EXT_Voltage >= 0)
+      bool bOn = _pwm_switch_status;
+      if (curr_EXT_Voltage >= 0 && curr_EXT_Voltage < 18.3)
       {
         if (wifiConfig.volt_Switch_off >= curr_EXT_Voltage)
         {

@@ -17,7 +17,7 @@ bool _pwm_switch_status = false;
 float getVoltage()
 {
 
-  float calibration = 1.1074; // Adjust for ultimate accuracy when input is measured using an accurate DVM, if reading too high then use e.g. 0.99, too low use 1.01
+  float calibration = wifiConfig.volt_calibration; // Adjust for ultimate accuracy when input is measured using an accurate DVM, if reading too high then use e.g. 0.99, too low use 1.01
 
   // R1 10k, R2 2.2k, output 3.3v e fatto calcolare input massimo = 18.3, massimo a batteria piena sono 14.6 (lifepo4)
   float voltage = (float)analogRead(VOLT_PIN) / 4095 // Risoluzione ADC
@@ -80,6 +80,7 @@ void readConfigs()
   wifiConfig.volt_Switch_off = prf_config.getFloat("volt_Switch_off", 12.0);
   wifiConfig.volt_Switch_ON = prf_config.getFloat("volt_Switch_ON", 12.6);
   wifiConfig.volt_MAX_BLUETT_PERC = prf_config.getShort("volt_MAX_BLUETT_PERC", 80);
+  wifiConfig.volt_calibration = prf_config.getFloat("volt_calibration", 1.1074);
 #endif
 
   wifiConfig.showDebugInfos = prf_config.getBool("showDebugInfos", false);
@@ -119,6 +120,7 @@ void saveConfig()
 prf_config.putFloat("volt_Switch_off", wifiConfig.volt_Switch_off);
 prf_config.putFloat("volt_Switch_ON", wifiConfig.volt_Switch_ON);
 prf_config.putShort("volt_MAX_BLUETT_PERC", wifiConfig.volt_MAX_BLUETT_PERC);
+prf_config.putShort("volt_calibration", wifiConfig.volt_calibration);
 #endif
 
   prf_config.putBool("showDebugInfos", wifiConfig.showDebugInfos);

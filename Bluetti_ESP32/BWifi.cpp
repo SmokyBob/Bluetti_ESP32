@@ -620,6 +620,14 @@ String processor_config(const String &var)
   {
     toRet = wifiConfig.volt_MAX_BLUETT_PERC;
   }
+  else if (var == F("VOLT_CALIBRATION"))
+  {
+    toRet = curr_EXT_Voltage;
+  }
+  else if (var == F("CURR_VOLT"))
+  {
+    toRet = curr_EXT_Voltage;
+  }
 #endif
   else if (var == F("B_SHOW_DEBUG_INFOS"))
   {
@@ -743,6 +751,18 @@ void config_POST(AsyncWebServerRequest *request)
   wifiConfig.volt_Switch_off = request->getParam("volt_Switch_off", isPost)->value().toFloat();
   wifiConfig.volt_Switch_ON = request->getParam("volt_Switch_ON", isPost)->value().toFloat();
   wifiConfig.volt_MAX_BLUETT_PERC = request->getParam("volt_MAX_BLUETT_PERC", isPost)->value().toInt();
+  float newVolt = request->getParam("newVolt_calibration", isPost)->value().toFloat();
+  float oldVolt = request->getParam("baseVolt_calibration", isPost)->value().toFloat();
+  Serial.printf("newVolt %.2f \n",newVolt);
+  Serial.printf("baseVolt %.2f \n",oldVolt);
+  if (newVolt != oldVolt)
+  {
+    // get the measured voltage prior to calibration
+    oldVolt = oldVolt / wifiConfig.volt_calibration;
+
+    wifiConfig.volt_calibration = newVolt / oldVolt;
+    curr_EXT_Voltage = getVoltage();
+  }
 #endif
 
   wifiConfig.showDebugInfos = request->hasParam("showDebugInfos", isPost);

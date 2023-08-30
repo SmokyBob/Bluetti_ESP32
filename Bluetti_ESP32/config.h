@@ -68,6 +68,7 @@ typedef struct
   float volt_Switch_off = 12.0;
   float volt_Switch_ON = 12.6;
   uint8_t volt_MAX_BLUETT_PERC = 80;
+  float volt_calibration = 1.1074;
 #endif
   // Root Page configs
   bool showDebugInfos = false; // shows FreeHeap, debugLog Link, etc...
