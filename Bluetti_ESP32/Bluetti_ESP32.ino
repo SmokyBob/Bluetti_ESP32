@@ -27,7 +27,10 @@ void setup()
 #endif
 
 #if USE_EXT_BAT == 1
+  // init the swith and turn it off at the start
   pinMode(PWM_SWITCH_PIN, OUTPUT);
+  setSwitch(false);
+
   // Voltage measurements calibration
   esp_adc_cal_characteristics_t adc_chars;
   esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, 1100, &adc_chars);

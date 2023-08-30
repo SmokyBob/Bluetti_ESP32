@@ -43,6 +43,14 @@
       box-shadow: 0 0 1px #689f38;
     }
 
+    input:checked+.slider.blue {
+      background-color: #4e44e2;
+    }
+
+    input:focus+.slider.blue {
+      box-shadow: 0 0 1px #4e44e2;
+    }
+
     input:checked+.slider:before {
       -webkit-transform: translateX(13px);
       -ms-transform: translateX(13px);

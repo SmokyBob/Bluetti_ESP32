@@ -281,6 +281,7 @@ void update_root()
   jsonString += "\"B_BT_CONNECTED\" : " + String(isBTconnected()) + "" + ",";
   jsonString += "\"BT_LAST_MEX_TIME\" : \"" + convertMilliSecondsToHHMMSS(getLastBTMessageTime()) + "\"" + ",";
   jsonString += "\"B_AC_OUTPUT_ON\" : " + String((bluetti_state_data[AC_OUTPUT_ON].f_value == "1")) + "" + ",";
+  jsonString += "\"B_DC_OUTPUT_ON\" : " + String((bluetti_state_data[DC_OUTPUT_ON].f_value == "1")) + "" + ",";
 
   jsonString += "\"FREE_HEAP\" : \"" + String(ESP.getFreeHeap()) + "\"" + ",";
   jsonString += "\"TOTAL_HEAP\" : \"" + String(ESP.getHeapSize()) + "\"" + ",";

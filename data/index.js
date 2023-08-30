@@ -80,6 +80,7 @@ function processCommand(event) {
 
   document.getElementById('BT_LAST_MEX_TIME').innerHTML = obj.BT_LAST_MEX_TIME;
   document.getElementById('chk_AC_OUTPUT_ON').checked = obj.B_AC_OUTPUT_ON;
+  document.getElementById('chk_DC_OUTPUT_ON').checked = obj.B_DC_OUTPUT_ON;
 
   //debug infos, html elements might not exists
   try {
