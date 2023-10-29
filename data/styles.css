@@ -50,6 +50,13 @@
     input:focus+.slider.blue {
       box-shadow: 0 0 1px #4e44e2;
     }
+    input:checked+.slider.red {
+      background-color: #d3280a;
+    }
+
+    input:focus+.slider.red {
+      box-shadow: 0 0 1px #d3280a;
+    }
 
     input:checked+.slider:before {
       -webkit-transform: translateX(13px);

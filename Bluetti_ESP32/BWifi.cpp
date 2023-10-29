@@ -1,7 +1,7 @@
 #include "BluettiConfig.h"
 #include "BWifi.h"
 #include "BTooth.h"
-#include <ESPmDNS.h>
+#include<ESPmDNS.h>
 #include "utils.h"
 #ifdef ESP32
 #include <WiFi.h>
@@ -369,13 +369,13 @@ void update_root()
 #if USE_EXT_BAT == 1
   jsonString += "\"CURR_EXT_VOLTAGE\" : \"" + String(curr_EXT_Voltage) + "\"" + ",";
 
-  String pwm_str = "OFF";
+  String pwm_str = "0";
 
   if (_pwm_switch_status)
   {
-    pwm_str = "ON";
+    pwm_str = "1";
   }
-  jsonString += "\"PWM_SWITCH_STATUS\" : \"" + pwm_str + "\"" + ",";
+  jsonString += "\"B_PWM_SWITCH\" : " + pwm_str  + "" + ",";
 #endif
 
   jsonString += "\"bluetti_state_data\" : {";
@@ -484,26 +484,37 @@ void handleBTCommand(String topic, String payloadData)
   String strPayload = payloadData;
   Serial.println(strPayload);
 
-  bt_command_t command;
-  command.prefix = 0x01;
-  command.field_update_cmd = 0x06;
-
-  for (int i = 0; i < sizeof(bluetti_device_command) / sizeof(device_field_data_t); i++)
+  if (topic_path == "pwm_switch")
   {
-    if (topic_path.indexOf(map_field_name(bluetti_device_command[i].f_name)) > -1)
-    {
-      command.page = bluetti_device_command[i].f_page;
-      command.offset = bluetti_device_command[i].f_offset;
-
-      String current_name = map_field_name(bluetti_device_command[i].f_name);
-      strPayload = map_command_value(current_name, strPayload);
+    if (payloadData =="1"){
+      setSwitch(true);
+    }else{
+      setSwitch(false);
     }
   }
+  else
+  {
+    bt_command_t command;
+    command.prefix = 0x01;
+    command.field_update_cmd = 0x06;
 
-  command.len = swap_bytes(strPayload.toInt());
-  command.check_sum = modbus_crc((uint8_t *)&command, 6);
+    for (int i = 0; i < sizeof(bluetti_device_command) / sizeof(device_field_data_t); i++)
+    {
+      if (topic_path.indexOf(map_field_name(bluetti_device_command[i].f_name)) > -1)
+      {
+        command.page = bluetti_device_command[i].f_page;
+        command.offset = bluetti_device_command[i].f_offset;
 
-  sendBTCommand(command);
+        String current_name = map_field_name(bluetti_device_command[i].f_name);
+        strPayload = map_command_value(current_name, strPayload);
+      }
+    }
+
+    command.len = swap_bytes(strPayload.toInt());
+    command.check_sum = modbus_crc((uint8_t *)&command, 6);
+
+    sendBTCommand(command);
+  }
 }
 
 const char *PARAM_TYPE = "type";
@@ -754,8 +765,8 @@ void config_POST(AsyncWebServerRequest *request)
   wifiConfig.volt_MAX_BLUETT_PERC = request->getParam("volt_MAX_BLUETT_PERC", isPost)->value().toInt();
   float newVolt = request->getParam("newVolt_calibration", isPost)->value().toFloat();
   float oldVolt = request->getParam("baseVolt_calibration", isPost)->value().toFloat();
-  Serial.printf("newVolt %.2f \n",newVolt);
-  Serial.printf("baseVolt %.2f \n",oldVolt);
+  Serial.printf("newVolt %.2f \n", newVolt);
+  Serial.printf("baseVolt %.2f \n", oldVolt);
   if (newVolt != oldVolt)
   {
     // get the measured voltage prior to calibration

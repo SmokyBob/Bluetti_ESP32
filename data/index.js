@@ -117,7 +117,7 @@ function processCommand(event) {
   if (obj.CURR_EXT_VOLTAGE != null) {
     document.getElementsByClassName("ext_battery")[0].style.display = "table-row";
     document.getElementById('CURR_EXT_VOLTAGE').innerHTML = obj.CURR_EXT_VOLTAGE;
-    document.getElementById('PWM_SWITCH_STATUS').innerHTML = obj.PWM_SWITCH_STATUS;
+    document.getElementById('chk_PWM_SWITCH').checked = obj.B_PWM_SWITCH;
   }
 
   document.getElementById('lastWebSocketTime').innerHTML = obj.lastWebSocketTime;
