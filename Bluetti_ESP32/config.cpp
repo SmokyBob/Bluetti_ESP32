@@ -14,9 +14,13 @@ float humidity = 0.00;
 float vref = 1100;
 float curr_EXT_Voltage = 18.3;
 bool _pwm_switch_status = false;
-float getVoltage()
-{
+float _voltArray[5];
+bool voltInitComplete = false;
+byte voltArrayindex = 0;
 
+void calculateVoltage()
+{
+  // Calculate the current voltage and add it to the last five values array
   float calibration = wifiConfig.volt_calibration; // Adjust for ultimate accuracy when input is measured using an accurate DVM, if reading too high then use e.g. 0.99, too low use 1.01
 
   // R1 10k, R2 2.2k, output 3.3v e fatto calcolare input massimo = 18.3, massimo a batteria piena sono 14.6 (lifepo4)
@@ -28,7 +32,33 @@ float getVoltage()
                      ) *
                   calibration;
 
-  return voltage;
+  _voltArray[voltArrayindex] = voltage;
+  voltArrayindex = voltArrayindex + 1;
+
+  if (voltArrayindex == 5)
+  {
+    voltArrayindex = 0;
+    if (voltInitComplete == false)
+    {
+      voltInitComplete = true;
+    }
+  }
+}
+
+float getVoltage()
+{
+  if (voltInitComplete)
+  {
+
+    double sum = 0.00; // sum will be larger than an item, double for safety.
+    for (int i = 0; i < 5; i++)
+      sum += _voltArray[i];
+    return ((float)sum) / 5; // average will be fractional, so float may be appropriate.
+  }
+  else
+  {
+    return _voltArray[voltArrayindex];
+  }
 };
 
 void setSwitch(bool bON)
@@ -117,10 +147,10 @@ void saveConfig()
 #endif
 
 #if USE_EXT_BAT == 1
-prf_config.putFloat("volt_Switch_off", wifiConfig.volt_Switch_off);
-prf_config.putFloat("volt_Switch_ON", wifiConfig.volt_Switch_ON);
-prf_config.putShort("volt_MAX_BLUETT_PERC", wifiConfig.volt_MAX_BLUETT_PERC);
-prf_config.putShort("volt_calibration", wifiConfig.volt_calibration);
+  prf_config.putFloat("volt_Switch_off", wifiConfig.volt_Switch_off);
+  prf_config.putFloat("volt_Switch_ON", wifiConfig.volt_Switch_ON);
+  prf_config.putShort("volt_MAX_BLUETT_PERC", wifiConfig.volt_MAX_BLUETT_PERC);
+  prf_config.putShort("volt_calibration", wifiConfig.volt_calibration);
 #endif
 
   prf_config.putBool("showDebugInfos", wifiConfig.showDebugInfos);

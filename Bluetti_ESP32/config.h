@@ -103,6 +103,7 @@ extern float humidity;
 extern float vref;
 extern float curr_EXT_Voltage;
 extern bool _pwm_switch_status;
+extern void calculateVoltage();
 extern float getVoltage();
 extern void setSwitch(bool bON);
 #endif

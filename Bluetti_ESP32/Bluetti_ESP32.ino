@@ -70,6 +70,7 @@ bool printHeap = false;
 #endif
 
 unsigned long serialTick = 0;
+unsigned long voltTick = 0;
 
 void loop()
 {
@@ -97,6 +98,15 @@ void loop()
   }
   else
   {
+#if USE_EXT_BAT == 1
+    // Calculate the voltage every second
+    if ((millis() - voltTick) > 1000)
+    {
+      calculateVoltage();
+      voltTick = millis();
+    }
+
+#endif
     if ((millis() - serialTick) > (DEVICE_STATE_UPDATE * 1000))
     {
       if (esp_task_wdt_status(NULL) == ESP_ERR_NOT_FOUND)
