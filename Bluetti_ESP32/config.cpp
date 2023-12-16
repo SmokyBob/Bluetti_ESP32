@@ -27,9 +27,9 @@ void calculateVoltage()
   float voltage = (float)analogRead(VOLT_PIN) / 4095 // Risoluzione ADC
                   * 18.3                             // Voltaggio massimo
                   * (1100 / vref)                    // Offset calibrazione
-                  * (2200                            // Resistenza calcolata
-                     / 2200                          // Resistenza reale
-                     ) *
+                  * ((10000 + // R1 or the resistence connected to positive (real value)
+                    2200) / // R2 or the resistence connectect to GND (real value)
+                    2200) *
                   calibration;
 
   _voltArray[voltArrayindex] = voltage;
