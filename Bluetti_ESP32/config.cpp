@@ -109,8 +109,8 @@ void readConfigs()
 #if USE_EXT_BAT == 1
   wifiConfig.volt_Switch_off = prf_config.getFloat("volt_Switch_off", 12.0);
   wifiConfig.volt_Switch_ON = prf_config.getFloat("volt_Switch_ON", 12.6);
-  wifiConfig.volt_MAX_BLUETT_PERC = prf_config.getShort("volt_MAX_BLUETT_PERC", 80);
-  wifiConfig.volt_calibration = prf_config.getFloat("volt_calibration", 1.1074);
+  wifiConfig.volt_MAX_BLUETT_PERC = prf_config.getShort("volt_MAX_PERC", 80);
+  wifiConfig.volt_calibration = prf_config.getFloat("volt_calib", 1.1074);
 #endif
 
   wifiConfig.showDebugInfos = prf_config.getBool("showDebugInfos", false);
@@ -149,8 +149,8 @@ void saveConfig()
 #if USE_EXT_BAT == 1
   prf_config.putFloat("volt_Switch_off", wifiConfig.volt_Switch_off);
   prf_config.putFloat("volt_Switch_ON", wifiConfig.volt_Switch_ON);
-  prf_config.putShort("volt_MAX_BLUETT_PERC", wifiConfig.volt_MAX_BLUETT_PERC);
-  prf_config.putShort("volt_calibration", wifiConfig.volt_calibration);
+  prf_config.putShort("volt_MAX_PERC", wifiConfig.volt_MAX_BLUETT_PERC);
+  prf_config.putFloat("volt_calib", wifiConfig.volt_calibration);
 #endif
 
   prf_config.putBool("showDebugInfos", wifiConfig.showDebugInfos);
