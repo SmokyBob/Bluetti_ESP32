@@ -1,7 +1,7 @@
 #include "BluettiConfig.h"
 #include "BWifi.h"
 #include "BTooth.h"
-#include<ESPmDNS.h>
+#include <ESPmDNS.h>
 #include "utils.h"
 #ifdef ESP32
 #include <WiFi.h>
@@ -270,6 +270,7 @@ int AC_OUTPUT_MAX = 0;
 float TEMPERATURE_MAX = 0.00;
 float HUMIDITY_MAX = 0.00;
 #endif
+String _lastMax_date;
 
 void update_root()
 {
@@ -303,6 +304,39 @@ void update_root()
 
   jsonString += "\"SPIFFS_TOTAL\" : \"" + String(SPIFFS.totalBytes()) + "\"" + ",";
 
+  if (_lastMax_date != "")
+  {
+    // diff with current time, if more than an hour set to "" to stop ignoring the low voltage
+    struct tm tm;
+    strptime(_lastMax_date.c_str(), "%FT%T", &tm);
+
+    time_t time_last = mktime(&tm);
+    char buf[100];
+    strftime(buf, sizeof(buf), "%FT%T", &tm);
+    // Serial.printf("last_IgnoreLowVolt: %s \n", buf);
+
+    struct tm timeinfo;
+    getLocalTime(&timeinfo);
+    time_t time_curr = mktime(&timeinfo);
+
+    float minutes_passed = (time_curr - time_last) / 60.0;
+    if (minutes_passed >= (60.00 * 24))
+    {
+      // 1 day passed, reenable low voltage check
+      _lastMax_date = String(buf);
+      // Reinit Max and mins
+      BATT_PERC_MIN = 100;
+      BATT_PERC_MAX = 0;
+      DC_INPUT_MAX = 0;
+      DC_OUTPUT_MAX = 0;
+      AC_INPUT_MAX = 0;
+      AC_OUTPUT_MAX = 0;
+#if USE_TEMPERATURE_SENSOR == 1
+      TEMPERATURE_MAX = 0.00;
+      HUMIDITY_MAX = 0.00;
+#endif
+    }
+  }
   int tmpInt = bluetti_state_data[TOTAL_BATTERY_PERCENT].f_value.toInt();
 
   if (BATT_PERC_MIN > tmpInt && tmpInt != 0)
@@ -375,7 +409,7 @@ void update_root()
   {
     pwm_str = "1";
   }
-  jsonString += "\"B_PWM_SWITCH\" : " + pwm_str  + "" + ",";
+  jsonString += "\"B_PWM_SWITCH\" : " + pwm_str + "" + ",";
 #endif
 
   jsonString += "\"bluetti_state_data\" : {";
@@ -486,9 +520,12 @@ void handleBTCommand(String topic, String payloadData)
 
   if (topic_path == "pwm_switch")
   {
-    if (payloadData =="1"){
+    if (payloadData == "1")
+    {
       setSwitch(true);
-    }else{
+    }
+    else
+    {
       setSwitch(false);
     }
   }
