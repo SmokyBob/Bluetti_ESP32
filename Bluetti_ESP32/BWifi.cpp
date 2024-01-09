@@ -313,7 +313,7 @@ void update_root()
     time_t time_last = mktime(&tm);
     char buf[100];
     strftime(buf, sizeof(buf), "%FT%T", &tm);
-    // Serial.printf("last_IgnoreLowVolt: %s \n", buf);
+    // Serial.printf("_lastMax_date: %s \n", buf);
 
     struct tm timeinfo;
     getLocalTime(&timeinfo);
@@ -322,7 +322,8 @@ void update_root()
     float minutes_passed = (time_curr - time_last) / 60.0;
     if (minutes_passed >= (60.00 * 24))
     {
-      // 1 day passed, reenable low voltage check
+      // 1 day passed
+      strftime(buf, sizeof(buf), "%FT%T", &timeinfo);
       _lastMax_date = String(buf);
       // Reinit Max and mins
       BATT_PERC_MIN = 100;
@@ -336,6 +337,15 @@ void update_root()
       HUMIDITY_MAX = 0.00;
 #endif
     }
+  }
+  else
+  {
+    // Init last max
+    struct tm timeinfo;
+    getLocalTime(&timeinfo);
+    char buf[100];
+    strftime(buf, sizeof(buf), "%FT%T", &timeinfo);
+    _lastMax_date = String(buf);
   }
   int tmpInt = bluetti_state_data[TOTAL_BATTERY_PERCENT].f_value.toInt();
 
