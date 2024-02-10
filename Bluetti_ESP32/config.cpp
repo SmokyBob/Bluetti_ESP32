@@ -77,6 +77,24 @@ void setSwitch(bool bON)
 };
 #endif
 
+#ifdef RELAY_220_PIN
+bool _220_relay_status = false;
+void set220Relay(bool bON)
+{
+  if (bON)
+  {
+    digitalWrite(RELAY_220_PIN, HIGH);
+  }
+  else
+  {
+    digitalWrite(RELAY_220_PIN, LOW);
+  }
+  _220_relay_status = bON;
+
+  Serial.printf("220_relay set to: %s \n", String(_220_relay_status));
+};
+#endif
+
 ESPBluettiSettings wifiConfig;
 
 Preferences prf_config;

@@ -410,16 +410,27 @@ void update_root()
   jsonString += "\"HUMIDITY_MAX\" : \"" + String(HUMIDITY_MAX) + "\"" + ",";
 
 #endif
+  String pwm_str = "0";
 #if USE_EXT_BAT == 1
   jsonString += "\"CURR_EXT_VOLTAGE\" : \"" + String(curr_EXT_Voltage) + "\"" + ",";
 
-  String pwm_str = "0";
+  pwm_str = "0";
 
   if (_pwm_switch_status)
   {
     pwm_str = "1";
   }
   jsonString += "\"B_PWM_SWITCH\" : " + pwm_str + "" + ",";
+#endif
+#ifdef RELAY_220_PIN
+  // 220_relay
+  pwm_str = "0";
+
+  if (_220_relay_status)
+  {
+    pwm_str = "1";
+  }
+  jsonString += "\"B_220_RELAY\" : " + pwm_str + "" + ",";
 #endif
 
   jsonString += "\"bluetti_state_data\" : {";
@@ -527,7 +538,8 @@ void handleBTCommand(String topic, String payloadData)
   Serial.print(F(" Payload: "));
   String strPayload = payloadData;
   Serial.println(strPayload);
-
+  bool process = true;
+#ifdef PWM_SWITCH_PIN
   if (topic_path == "pwm_switch")
   {
     if (payloadData == "1")
@@ -538,8 +550,24 @@ void handleBTCommand(String topic, String payloadData)
     {
       setSwitch(false);
     }
+    process = false;
   }
-  else
+#endif
+#ifdef RELAY_220_PIN
+  if (topic_path == "220_relay")
+  {
+    if (payloadData == "1")
+    {
+      set220Relay(true);
+    }
+    else
+    {
+      set220Relay(false);
+    }
+    process = false;
+  }
+#endif
+  if (process)
   {
     bt_command_t command;
     command.prefix = 0x01;

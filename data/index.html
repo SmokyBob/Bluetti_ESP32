@@ -103,18 +103,26 @@
         <td></td>
       </tr>
       <tr class="ext_battery">
-        <td><span class="material-symbols-outlined">electric_bolt</span> <span id="CURR_EXT_VOLTAGE">waiting ...</span></td>
+        <td><span class="material-symbols-outlined">electric_bolt</span> <span id="CURR_EXT_VOLTAGE">waiting ...</span>
+        </td>
         <td>
           <div style="display:inline-flex">
             <span class="material-symbols-outlined">switch</span>
             <label class="switch">
-              <input id="chk_PWM_SWITCH" type="checkbox" onclick="onCheckChanged('PWM_SWITCH',this);"
-                %B_PWM_SWITCH%>
+              <input id="chk_PWM_SWITCH" type="checkbox" onclick="onCheckChanged('PWM_SWITCH',this);" %B_PWM_SWITCH%>
               <span class="slider red round"></span>
             </label>
           </div>
         </td>
-        <td></td>
+        <td>
+          <div style="display:inline-flex" id="div_220_RELAY">
+            <span class="material-symbols-outlined">power</span>
+            <label class="switch">
+              <input id="chk_220_RELAY" type="checkbox" onclick="onCheckChanged('220_RELAY',this);" %B_220_RELAY%>
+              <span class="slider red round"></span>
+            </label>
+          </div>
+        </td>
       </tr>
       <tr>
         <td colspan="3">

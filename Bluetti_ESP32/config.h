@@ -27,6 +27,7 @@
 #define USE_EXT_BAT 1 // Set to 0 for External battery
 #define VOLT_PIN 36   // SP o VP
 #define PWM_SWITCH_PIN 18
+#define RELAY_220_PIN 23
 
 #define MAX_DISCONNECTED_TIME_UNTIL_REBOOT 2 // device will reboot when wlan/BT is not connectet within x Minutes
 
@@ -106,6 +107,10 @@ extern bool _pwm_switch_status;
 extern void calculateVoltage();
 extern float getVoltage();
 extern void setSwitch(bool bON);
+#endif
+#ifdef RELAY_220_PIN
+extern bool _220_relay_status;
+extern void set220Relay(bool bON);
 #endif
 
 #endif

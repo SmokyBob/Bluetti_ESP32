@@ -37,6 +37,11 @@ void setup()
   vref = adc_chars.vref; // Obtain the device ADC reference voltage
 #endif
 
+#ifdef RELAY_220_PIN
+  pinMode(RELAY_220_PIN, OUTPUT);
+  set220Relay(false);
+#endif
+
 #if USE_TEMPERATURE_SENSOR == 1
   tempSensor.begin(TEMPERATURE_SDA_PIN, TEMPERATURE_SCL_PIN);
 #endif

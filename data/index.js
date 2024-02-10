@@ -119,6 +119,13 @@ function processCommand(event) {
     document.getElementById('CURR_EXT_VOLTAGE').innerHTML = obj.CURR_EXT_VOLTAGE;
     document.getElementById('chk_PWM_SWITCH').checked = obj.B_PWM_SWITCH;
   }
+  if (obj.B_220_RELAY != null) {
+    document.getElementById('div_220_RELAY').style.display = 'inline-flex';
+    document.getElementById('chk_220_RELAY').checked = obj.B_220_RELAY;
+  } else {
+    document.getElementById('div_220_RELAY').style.display = 'none';
+
+  }
 
   document.getElementById('lastWebSocketTime').innerHTML = obj.lastWebSocketTime;
 
