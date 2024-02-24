@@ -23,8 +23,10 @@ void calculateVoltage()
   // Calculate the current voltage and add it to the last five values array
   float calibration = wifiConfig.volt_calibration; // Adjust for ultimate accuracy when input is measured using an accurate DVM, if reading too high then use e.g. 0.99, too low use 1.01
 
+  float analog = (float)analogRead(VOLT_PIN);
+  Serial.printf("analog voltage %.2f \n", curr_EXT_Voltage);
   // R1 10k, R2 2.2k, output 3.3v e fatto calcolare input massimo = 18.3, massimo a batteria piena sono 14.6 (lifepo4)
-  float voltage = (float)analogRead(VOLT_PIN) / 4095 // Risoluzione ADC
+  float voltage = analog / 4095 // Risoluzione ADC
                   * 18.3                             // Voltaggio massimo
                   * (1100 / vref)                    // Offset calibrazione
                   * ((10000 + // R1 or the resistence connected to positive (real value)

@@ -57,6 +57,13 @@
     input:focus+.slider.red {
       box-shadow: 0 0 1px #d3280a;
     }
+    input:checked+.slider.orange {
+      background-color: orange;
+    }
+
+    input:focus+.slider.orange {
+      box-shadow: 0 0 1px orange;
+    }
 
     input:checked+.slider:before {
       -webkit-transform: translateX(13px);
