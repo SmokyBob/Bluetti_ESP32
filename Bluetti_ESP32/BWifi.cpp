@@ -12,7 +12,8 @@
 #endif
 #include <ESPAsyncWebServer.h>
 #include <DNSServer.h>
-#include <AsyncElegantOTA.h>
+
+#include <ElegantOTA.h>
 
 AsyncWebServer server(80);
 AsyncWebSocket webSocket("/ws");
@@ -1005,7 +1006,7 @@ void setWebHandles()
   webSocket.onEvent(onWebSocketEvent); // Register WS event handler
   server.addHandler(&webSocket);
 
-  AsyncElegantOTA.begin(&server); // Start AsyncElegantOTA
+  ElegantOTA.begin(&server); // Start ElegantOTA
   server.begin();
 }
 
