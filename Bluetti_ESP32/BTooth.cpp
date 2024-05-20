@@ -68,7 +68,9 @@ class BluettiAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks
         serverAddress = advertisedDevice->getAddress();
         doConnect = true;
         doScan = true; // Rescan if connection is close abnormally
-      }else{
+      }
+      else
+      {
         Serial.print(F("Private Address, skip. Addr:"));
         Serial.println(advertisedDevice->getAddress().toString().c_str());
       }
@@ -159,11 +161,12 @@ bool connectToServer()
 
   // Connect to the remove BLE Server.
 
-  if (!pClient->connect(serverAddress)) {
-      /** Created a client but failed to connect, don't need to keep it as it has no data */
-      BLEDevice::deleteClient(pClient);
-      Serial.println("Failed to connect, deleted client");
-      return false;
+  if (!pClient->connect(serverAddress))
+  {
+    /** Created a client but failed to connect, don't need to keep it as it has no data */
+    BLEDevice::deleteClient(pClient);
+    Serial.println("Failed to connect, deleted client");
+    return false;
   }
   Serial.println(F(" - Connected to server"));
 
@@ -293,6 +296,13 @@ void handleBluetooth()
     if (!manualDisconnect)
     {
       if ((millis() - lastBTMessage) > (MAX_DISCONNECTED_TIME_UNTIL_REBOOT * 60000))
+      {
+// maybe the battery has been dained, because we couldn't connect, tunr AC input on
+#ifdef RELAY_220_PIN
+        set220Relay(true);
+#endif
+      }
+      else if ((millis() - lastBTMessage) > (2 * MAX_DISCONNECTED_TIME_UNTIL_REBOOT * 60000))
       {
         Serial.println(F("BT is disconnected over allowed limit, reboot device"));
         writeLog("BT is disconnected over allowed limit, reboot device");

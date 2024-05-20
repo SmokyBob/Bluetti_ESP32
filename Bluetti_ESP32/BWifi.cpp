@@ -1007,6 +1007,7 @@ void setWebHandles()
   server.addHandler(&webSocket);
 
   ElegantOTA.begin(&server); // Start ElegantOTA
+  ElegantOTA.setAutoReboot(true);
   server.begin();
 }
 
@@ -1066,9 +1067,10 @@ void wifiConnect(bool resetWifi)
       if ((millis() - connectTimeout) > (5 * 60 * 1000))
       {
         Serial.println("Wifi Not connected with ssid: " + wifiConfig.ssid + " ! Force AP Mode");
-        writeLog("Wifi Not connected with ssid: " + wifiConfig.ssid + " ! Force AP Mode");
-        wifiConfig.APMode = true;
-        saveConfig();
+        // writeLog("Wifi Not connected with ssid: " + wifiConfig.ssid + " ! Force AP Mode");
+        // wifiConfig.APMode = true;
+        // saveConfig();
+        _rebootDevice = true; // reboot the device, but keep trying to reconnect this should avoid battery drain if the wifi goes down
         break;
       }
     }
