@@ -1,0 +1,111 @@
+# Example mqtt.yaml entry
+sensor:
+  - device:
+      name: "EB3AXXXXXXXXXXXX"
+      model: "EB3A"
+      manufacturer: "Bluetti"
+      identifiers: 
+        - "XXXXXXXXXXXX"
+    name: "Total Battery Percentage"
+    unique_id: "EB3AXXXXXXXXXXXX/state/total_battery_percent"
+    state_topic: "bluetti/EB3AXXXXXXXXXXXX/state/total_battery_percent"
+    device_class: "battery"
+    state_class: "measurement" # only if you want long term statistics 
+    value_template: "{{ value }}"
+  - device:
+      name: "EB3AXXXXXXXXXXXX"
+      model: "EB3A"
+      manufacturer: "Bluetti"
+      identifiers: 
+        - "XXXXXXXXXXXX"
+    name: "AC Input Power"
+    unique_id: "EB3AXXXXXXXXXXXX/state/ac_input_power"
+    state_topic: "bluetti/EB3AXXXXXXXXXXXX/state/ac_input_power"
+    device_class: "power"
+    unit_of_measurement: "W"
+    state_class: "measurement" # only if you want long term statistics 
+    value_template: "{{ value }}"
+  - device:
+      name: "EB3AXXXXXXXXXXXX"
+      model: "EB3A"
+      manufacturer: "Bluetti"
+      identifiers: 
+        - "XXXXXXXXXXXX"
+    name: "DC Input Power"
+    unique_id: "EB3AXXXXXXXXXXXX/state/dc_input_power"
+    state_topic: "bluetti/EB3AXXXXXXXXXXXX/state/dc_input_power"
+    device_class: "power"
+    unit_of_measurement: "W"
+    state_class: "measurement" # only if you want long term statistics 
+    value_template: "{{ value }}"
+  - device:
+      name: "EB3AXXXXXXXXXXXX"
+      model: "EB3A"
+      manufacturer: "Bluetti"
+      identifiers: 
+        - "XXXXXXXXXXXX"
+    name: "AC Ouput Power"
+    unique_id: "EB3AXXXXXXXXXXXX/state/ac_output_power"
+    state_topic: "bluetti/EB3AXXXXXXXXXXXX/state/ac_output_power"
+    device_class: "power"
+    unit_of_measurement: "W"
+    state_class: "measurement" # only if you want long term statistics 
+    value_template: "{{ value }}"
+  - device:
+      name: "EB3AXXXXXXXXXXXX"
+      model: "EB3A"
+      manufacturer: "Bluetti"
+      identifiers: 
+        - "XXXXXXXXXXXX"
+    name: "DC Ouput Power"
+    unique_id: "EB3AXXXXXXXXXXXX/state/dc_output_power"
+    state_topic: "bluetti/EB3AXXXXXXXXXXXX/state/dc_output_power"
+    device_class: "power"
+    unit_of_measurement: "W"
+    state_class: "measurement" # only if you want long term statistics 
+    value_template: "{{ value }}"
+
+binary_sensor:
+  - device:
+      name: "EB3AXXXXXXXXXXXX"
+      model: "EB3A"
+      manufacturer: "Bluetti"
+      identifiers: 
+        - "XXXXXXXXXXXX"
+    name: "Connection status"
+    unique_id: "EB3AXXXXXXXXXXXX/state/device_status"
+    state_topic: "bluetti/EB3AXXXXXXXXXXXX/state/device_status"
+    value_template: "{{ value_json.BTconnected }}"
+    payload_on: 1
+    payload_off: 0
+
+
+switch:
+  - device:
+      name: "EB3AXXXXXXXXXXXX"
+      model: "EB3A"
+      manufacturer: "Bluetti"
+      identifiers:
+        - "XXXXXXXXXXXX"
+    name: "Ac Output Switch"
+    unique_id: "EB3AXXXXXXXXXXXX/state/ac_output_on"
+    state_topic: "bluetti/EB3AXXXXXXXXXXXX/state/ac_output_on"
+    command_topic: "bluetti/EB3AXXXXXXXXXXXX/command/ac_output_on"
+    payload_on: 1
+    payload_off: 0
+    state_on: 1
+    state_off: 0
+  - device:
+      name: "EB3AXXXXXXXXXXXX"
+      model: "EB3A"
+      manufacturer: "Bluetti"
+      identifiers:
+        - "XXXXXXXXXXXX"
+    name: "Dc Output Switch"
+    unique_id: "EB3AXXXXXXXXXXXX/state/dc_output_on"
+    state_topic: "bluetti/EB3AXXXXXXXXXXXX/state/dc_output_on"
+    command_topic: "bluetti/EB3AXXXXXXXXXXXX/command/dc_output_on"
+    payload_on: 1
+    payload_off: 0
+    state_on: 1
+    state_off: 0
