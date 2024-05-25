@@ -134,6 +134,13 @@ void readConfigs()
 #endif
   wifiConfig.volt_calibration = prf_config.getFloat("volt_calib", 1.1074);
 #endif
+#ifdef USE_MQTT
+wifiConfig.mqtt_server = prf_config.getString("mqtt_server", "");
+wifiConfig.mqtt_port = prf_config.getString("mqtt_port", "1883");
+wifiConfig.mqtt_username = prf_config.getString("mqtt_username", "");
+wifiConfig.mqtt_password = prf_config.getString("mqtt_password", "");
+#endif
+
 
   wifiConfig.showDebugInfos = prf_config.getBool("showDebugInfos", false);
   wifiConfig.useDbgFilelog = prf_config.getBool("useDbgFilelog", false);
@@ -175,6 +182,12 @@ void saveConfig()
   prf_config.putShort("volt_MAX_PERC", wifiConfig.volt_MAX_BLUETT_PERC);
 #endif
   prf_config.putFloat("volt_calib", wifiConfig.volt_calibration);
+#endif
+#ifdef USE_MQTT
+  prf_config.putString("mqtt_server", wifiConfig.mqtt_server);
+  prf_config.putString("mqtt_port", wifiConfig.mqtt_port);
+  prf_config.putString("mqtt_username", wifiConfig.mqtt_username);
+  prf_config.putString("mqtt_password", wifiConfig.mqtt_password);
 #endif
 
   prf_config.putBool("showDebugInfos", wifiConfig.showDebugInfos);

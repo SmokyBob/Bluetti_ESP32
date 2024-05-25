@@ -45,6 +45,7 @@ static int daylightOffset_sec = 3600;
 
 #define IFTTT            // Decomment for IFTTT support and configuration
 #define LOCAL_AUTOMATION // Decomment to use run local automation and not an external system like Home Assistant
+#define USE_MQTT         // Decomment to use MQTT
 
 // N.B. if changed, update the function config_HTML to edit the fields
 // readConfigs and saveConfig needs to be updated too
@@ -85,6 +86,13 @@ typedef struct
   // Just in case the board misbehave
   uint8_t forcedResetHRS = 0;
   bool clrSpiffOnRst = false;
+
+  #ifdef USE_MQTT
+  String mqtt_server = "";
+  String mqtt_port  = "1883";
+  String mqtt_username = "";
+  String mqtt_password = "";
+  #endif
 
 } ESPBluettiSettings;
 

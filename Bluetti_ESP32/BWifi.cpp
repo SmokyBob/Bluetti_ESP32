@@ -12,6 +12,9 @@
 #endif
 #include <ESPAsyncWebServer.h>
 #include <DNSServer.h>
+#ifdef USE_MQTT
+#include "MQTT.h"
+#endif
 
 #include <ElegantOTA.h>
 
@@ -433,6 +436,11 @@ void update_root()
   }
   jsonString += "\"B_220_RELAY\" : " + pwm_str + "" + ",";
 #endif
+#ifdef USE_MQTT
+  // TODO: add to index.html
+  jsonString += "\"B_MQTT_CONNECTED\" : " + String(isMQTTconnected()) + "" + ",";
+  jsonString += "\"MQTT_LAST_MEX_TIME\" : \"" + convertMilliSecondsToHHMMSS(getLastMQTTMessageTime()) + "\"" + ",";
+#endif
 
   jsonString += "\"bluetti_state_data\" : {";
   for (int i = 0; i < sizeof(bluetti_state_data) / sizeof(device_field_data_t); i++)
@@ -709,6 +717,11 @@ String processor_config(const String &var)
   {
     toRet = wifiConfig.volt_MAX_BLUETT_PERC;
   }
+#else
+  else if (var == F("LOCAL_AUTOMATION"))
+  {
+    toRet = "display:none";
+  }
 #endif
   else if (var == F("VOLT_CALIBRATION"))
   {
@@ -739,6 +752,25 @@ String processor_config(const String &var)
   {
     toRet = (wifiConfig.clrSpiffOnRst) ? "checked" : "";
   }
+#if defined(USE_MQTT)
+  else if (var == F("MQTT_SERVER"))
+  {
+    toRet = wifiConfig.mqtt_server;
+  }
+  else if (var == F("MQTT_PORT"))
+  {
+    toRet = wifiConfig.mqtt_port;
+  }
+  else if (var == F("MQTT_USERNAME"))
+  {
+    toRet = wifiConfig.mqtt_username;
+  }
+  else if (var == F("MQTT_PASSWORD"))
+  {
+    toRet = wifiConfig.mqtt_password;
+  }
+
+#endif
 
   return toRet;
 }
@@ -765,6 +797,11 @@ void config_HTML(AsyncWebServerRequest *request, bool paramsSaved = false, bool 
     html.replace(F("%EXT_BAT%"), getFileContent("/templates/EXT_BAT.html"));
 #else
     html.replace(F("%EXT_BAT%"), F(""));
+#endif
+#ifdef USE_MQTT
+    html.replace(F("%MQTT%"), getFileContent("/templates/MQTT.html"));
+#else
+    html.replace(F("%MQQT%"), F(""));
 #endif
     // Replace tags in the html template before sending it to the client
     request->send_P(200, "text/html; charset=utf-8", html.c_str(), processor_config);
@@ -855,6 +892,13 @@ void config_POST(AsyncWebServerRequest *request)
     wifiConfig.volt_calibration = newVolt / oldVolt;
     curr_EXT_Voltage = getVoltage();
   }
+#endif
+
+#ifdef USE_MQTT
+  wifiConfig.mqtt_server = request->getParam("MQTT_SERVER", isPost)->value();
+  wifiConfig.mqtt_port = request->getParam("MQTT_PORT", isPost)->value();
+  wifiConfig.mqtt_username = request->getParam("MQTT_USERNAME", isPost)->value();
+  wifiConfig.mqtt_password = request->getParam("MQTT_PASSWORD", isPost)->value();
 #endif
 
   wifiConfig.showDebugInfos = request->hasParam("showDebugInfos", isPost);

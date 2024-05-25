@@ -10,6 +10,9 @@
 #if USE_EXT_BAT == 1
 #include "esp_adc_cal.h"
 #endif
+#ifdef USE_MQTT
+#include "MQTT.h"
+#endif
 
 #if USE_TEMPERATURE_SENSOR == 1
 SHT2x tempSensor;
@@ -131,6 +134,7 @@ void loop()
       curr_EXT_Voltage = getVoltage();
       Serial.printf("Voltage %.2f \n", curr_EXT_Voltage);
 #endif
+
       serialTick = millis();
     }
   }
@@ -166,6 +170,9 @@ void loop()
   {
     Serial.println(F("------------------------ after WebServer handle " + String(ESP.getHeapSize() - ESP.getFreeHeap())));
   }
+#endif
+#ifdef USE_MQTT
+handleMQTT(); 
 #endif
 
   if (wifiConfig.forcedResetHRS != 0)

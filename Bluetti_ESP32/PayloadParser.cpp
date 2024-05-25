@@ -8,6 +8,10 @@
 #include "BTooth.h"
 #include "BWifi.h"
 
+#ifdef USE_MQTT
+#include "MQTT.h"
+#endif
+
 uint16_t parse_uint_field(uint8_t data[])
 {
   return ((uint16_t)data[0] << 8) | (uint16_t)data[1];
@@ -168,6 +172,7 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
         case UINT_FIELD:
 
           bluetti_state_data[i].f_value = String(parse_uint_field(data_payload_field));
+
           break;
 
         case BOOL_FIELD:
@@ -198,6 +203,10 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
         default:
           break;
         }
+        
+#ifdef USE_MQTT
+        publishTopic(bluetti_device_state[i].f_name, bluetti_state_data[i].f_value);
+#endif
 
 #if DEBUG <= 4
         Serial.println(map_field_name(bluetti_state_data[i].f_name).c_str());
