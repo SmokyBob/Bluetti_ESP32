@@ -43,7 +43,8 @@ static String ntpServer = "pool.ntp.org";
 static long gmtOffset_sec = 3600 * (+1);
 static int daylightOffset_sec = 3600;
 
-#define IFTTT // Decomment for IFTTT support and configuration
+#define IFTTT            // Decomment for IFTTT support and configuration
+#define LOCAL_AUTOMATION // Decomment to use run local automation and not an external system like Home Assistant
 
 // N.B. if changed, update the function config_HTML to edit the fields
 // readConfigs and saveConfig needs to be updated too
@@ -66,9 +67,11 @@ typedef struct
 #endif
 
 #if USE_EXT_BAT == 1
+#if defined(LOCAL_AUTOMATION)
   float volt_Switch_off = 12.0;
   float volt_Switch_ON = 12.6;
   uint8_t volt_MAX_BLUETT_PERC = 80;
+#endif
   float volt_calibration = 1.1074;
 #endif
   // Root Page configs

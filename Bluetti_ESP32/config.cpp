@@ -26,12 +26,12 @@ void calculateVoltage()
   float analog = (float)analogRead(VOLT_PIN);
   Serial.printf("analog voltage %.2f \n", curr_EXT_Voltage);
   // R1 10k, R2 2.2k, output 3.3v e fatto calcolare input massimo = 18.3, massimo a batteria piena sono 14.6 (lifepo4)
-  float voltage = analog / 4095 // Risoluzione ADC
-                  * 18.3                             // Voltaggio massimo
-                  * (1100 / vref)                    // Offset calibrazione
-                  * ((10000 + // R1 or the resistence connected to positive (real value)
-                    2200) / // R2 or the resistence connectect to GND (real value)
-                    2200) *
+  float voltage = analog / 4095   // Risoluzione ADC
+                  * 18.3          // Voltaggio massimo
+                  * (1100 / vref) // Offset calibrazione
+                  * ((10000 +     // R1 or the resistence connected to positive (real value)
+                      2200) /     // R2 or the resistence connectect to GND (real value)
+                     2200) *
                   calibration;
 
   _voltArray[voltArrayindex] = voltage;
@@ -127,9 +127,11 @@ void readConfigs()
 #endif
 
 #if USE_EXT_BAT == 1
+#if defined(LOCAL_AUTOMATION)
   wifiConfig.volt_Switch_off = prf_config.getFloat("volt_Switch_off", 12.0);
   wifiConfig.volt_Switch_ON = prf_config.getFloat("volt_Switch_ON", 12.6);
   wifiConfig.volt_MAX_BLUETT_PERC = prf_config.getShort("volt_MAX_PERC", 80);
+#endif
   wifiConfig.volt_calibration = prf_config.getFloat("volt_calib", 1.1074);
 #endif
 
@@ -167,9 +169,11 @@ void saveConfig()
 #endif
 
 #if USE_EXT_BAT == 1
+#if defined(LOCAL_AUTOMATION)
   prf_config.putFloat("volt_Switch_off", wifiConfig.volt_Switch_off);
   prf_config.putFloat("volt_Switch_ON", wifiConfig.volt_Switch_ON);
   prf_config.putShort("volt_MAX_PERC", wifiConfig.volt_MAX_BLUETT_PERC);
+#endif
   prf_config.putFloat("volt_calib", wifiConfig.volt_calibration);
 #endif
 

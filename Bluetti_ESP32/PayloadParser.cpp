@@ -10,7 +10,7 @@
 
 uint16_t parse_uint_field(uint8_t data[])
 {
-  return ((uint16_t)data[0]<< 8) | (uint16_t)data[1];
+  return ((uint16_t)data[0] << 8) | (uint16_t)data[1];
 }
 
 bool parse_bool_field(uint8_t data[])
@@ -291,6 +291,7 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
       bool bOn = _pwm_switch_status;
       if (curr_EXT_Voltage >= 0 && curr_EXT_Voltage < 18.3)
       {
+#ifdef LOCAL_AUTOMATION
         if (wifiConfig.volt_Switch_off >= curr_EXT_Voltage)
         {
           // Low Ext Battery, No DC Power in to Bluetty
@@ -306,19 +307,24 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
           // Bluetty battery Charged, No DC Power in to Bluetty
           bOn = false;
         }
+#endif
       }
       Serial.printf("Voltage %.2f \n", curr_EXT_Voltage);
       Serial.printf("pwm_switch_status %s transition to %s \n", String(_pwm_switch_status), String(bOn));
+#if defined(LOCAL_AUTOMATION)
       // Change mosfwt pwm switch in needed
       if (bOn != _pwm_switch_status)
       {
         setSwitch(bOn);
       }
+#endif
 
 #endif
 
 #ifdef RELAY_220_PIN
       bool b220On = _220_relay_status;
+#if defined(LOCAL_AUTOMATION)
+#ifdef IFTTT
       if (wifiConfig.IFTT_low_bl != 0)
       {
         // Low Battery Notification (not charging)
@@ -332,12 +338,13 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
       if (wifiConfig.IFTT_high_bl != 0)
       {
         // Battery Charged (and charging)
-        if (curr_TOTAL_BATTERY_PERCENT >= (wifiConfig.IFTT_high_bl-1))
+        if (curr_TOTAL_BATTERY_PERCENT >= (wifiConfig.IFTT_high_bl - 1))
         {
           // Turn off the 220v Input
           b220On = false;
         }
       }
+#endif
 
       Serial.printf("220_relay_status %s transition to %s \n", String(_220_relay_status), String(b220On));
 
@@ -346,6 +353,7 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
       {
         set220Relay(b220On);
       }
+#endif
 #endif
     }
   }

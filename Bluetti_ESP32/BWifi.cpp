@@ -696,6 +696,7 @@ String processor_config(const String &var)
   }
 #endif
 #if USE_EXT_BAT == 1
+#if defined(LOCAL_AUTOMATION)
   else if (var == F("VOLT_SWITCH_OFF"))
   {
     toRet = wifiConfig.volt_Switch_off;
@@ -708,6 +709,7 @@ String processor_config(const String &var)
   {
     toRet = wifiConfig.volt_MAX_BLUETT_PERC;
   }
+#endif
   else if (var == F("VOLT_CALIBRATION"))
   {
     toRet = curr_EXT_Voltage;
@@ -836,9 +838,11 @@ void config_POST(AsyncWebServerRequest *request)
   }
 #endif
 #if USE_EXT_BAT == 1
+#if defined(LOCAL_AUTOMATION)
   wifiConfig.volt_Switch_off = request->getParam("volt_Switch_off", isPost)->value().toFloat();
   wifiConfig.volt_Switch_ON = request->getParam("volt_Switch_ON", isPost)->value().toFloat();
   wifiConfig.volt_MAX_BLUETT_PERC = request->getParam("volt_MAX_BLUETT_PERC", isPost)->value().toInt();
+#endif
   float newVolt = request->getParam("newVolt_calibration", isPost)->value().toFloat();
   float oldVolt = request->getParam("baseVolt_calibration", isPost)->value().toFloat();
   Serial.printf("newVolt %.2f \n", newVolt);
