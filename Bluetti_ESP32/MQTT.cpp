@@ -15,6 +15,7 @@ unsigned long lastMQTTMessage = 0;
 unsigned long previousDeviceStatePublish = 0;
 unsigned long previousDeviceStateStatusPublish = 0;
 unsigned long previousMqttReconnect = 0;
+unsigned long lastOtherMillis = 0;
 
 // Callback function
 void callback(char *topic, byte *payload, unsigned int length)
@@ -29,29 +30,62 @@ void callback(char *topic, byte *payload, unsigned int length)
   String strPayload = String((char *)payload);
   Serial.println(strPayload);
 
-  bt_command_t command;
-  command.prefix = 0x01;
-  command.field_update_cmd = 0x06;
+  bool customSwitches = false;
 
-  for (int i = 0; i < sizeof(bluetti_device_command) / sizeof(device_field_data_t); i++)
+  if (topic_path.indexOf("bat_pwm_switch") > -1)
   {
-    if (topic_path.indexOf(map_field_name(bluetti_device_command[i].f_name)) > -1)
+    customSwitches = true;
+#if USE_EXT_BAT == 1
+    if (strPayload == "1")
     {
-      command.page = bluetti_device_command[i].f_page;
-      command.offset = bluetti_device_command[i].f_offset;
-
-      String current_name = map_field_name(bluetti_device_command[i].f_name);
-      strPayload = map_command_value(current_name, strPayload);
+      setSwitch(true);
     }
+    else
+    {
+      setSwitch(false);
+    }
+#endif
   }
-  Serial.print(" Payload - switched: ");
-  Serial.println(strPayload);
+  if (topic_path.indexOf("220_relay") > -1)
+  {
+    customSwitches = true;
+#ifdef RELAY_220_PIN
+    if (strPayload == "1")
+    {
+      set220Relay(true);
+    }
+    else
+    {
+      set220Relay(false);
+    }
+#endif
+  }
+  if (customSwitches == false)
+  {
+    bt_command_t command;
+    command.prefix = 0x01;
+    command.field_update_cmd = 0x06;
 
-  command.len = swap_bytes(strPayload.toInt());
-  command.check_sum = modbus_crc((uint8_t *)&command, 6);
-  lastMQTTMessage = millis();
+    for (int i = 0; i < sizeof(bluetti_device_command) / sizeof(device_field_data_t); i++)
+    {
+      if (topic_path.indexOf(map_field_name(bluetti_device_command[i].f_name)) > -1)
+      {
+        command.page = bluetti_device_command[i].f_page;
+        command.offset = bluetti_device_command[i].f_offset;
 
-  sendBTCommand(command);
+        String current_name = map_field_name(bluetti_device_command[i].f_name);
+        strPayload = map_command_value(current_name, strPayload);
+      }
+    }
+    Serial.print(" Payload - switched: ");
+    Serial.println(strPayload);
+
+    command.len = swap_bytes(strPayload.toInt());
+    command.check_sum = modbus_crc((uint8_t *)&command, 6);
+    lastMQTTMessage = millis();
+
+    sendBTCommand(command);
+  }
 }
 
 void subscribeTopic(enum field_names field_name)
@@ -63,11 +97,6 @@ void subscribeTopic(enum field_names field_name)
 
   sprintf(subscribeTopicBuf, "bluetti/%s/command/%s", wifiConfig.bluetti_device_id.c_str(), map_field_name(field_name).c_str());
   client.subscribe(subscribeTopicBuf);
-
-  // TODO: Check for EXT_BATTERY and relay_220 variables
-  //  Ex. for relay_220
-  // sprintf(subscribeTopicBuf, "bluetti/%s/command/%s", wifiConfig.bluetti_device_id.c_str(), "220_RELAY");
-  // client.subscribe(subscribeTopicBuf);
 
   lastMQTTMessage = millis();
 }
@@ -126,20 +155,20 @@ void publishDeviceState()
   sprintf(publishTopicBuf, "bluetti/%s/state/%s", wifiConfig.bluetti_device_id.c_str(), "device");
   String currTime;
   struct tm timeinfo;
-    if (!getLocalTime(&timeinfo, DEVICE_STATE_UPDATE * 1000))
-    {
-      Serial.println(F("Failed to obtain time"));
-    }
-    else
-    {
-      // Save start time as string in the preferred format
-      // Full param list
-      // https://cplusplus.com/reference/ctime/strftime/
-      char buffer[80];
-      strftime(buffer, 80, "%F %T", &timeinfo); // ISO
+  if (!getLocalTime(&timeinfo, DEVICE_STATE_UPDATE * 1000))
+  {
+    Serial.println(F("Failed to obtain time"));
+  }
+  else
+  {
+    // Save start time as string in the preferred format
+    // Full param list
+    // https://cplusplus.com/reference/ctime/strftime/
+    char buffer[80];
+    strftime(buffer, 80, "%F %T", &timeinfo); // ISO
 
-      currTime = String(buffer);
-    }
+    currTime = String(buffer);
+  }
   String value = "{\"IP\":\"" + WiFi.localIP().toString() + "\", \"MAC\":\"" + WiFi.macAddress() + "\", \"Uptime\":" + millis() + ", \"LastUpdate\":" + currTime + "}";
 #ifdef DEBUG
   Serial.println("publishTopicBuf: " + String(publishTopicBuf));
@@ -151,17 +180,6 @@ void publishDeviceState()
   }
   lastMQTTMessage = millis();
   previousDeviceStatePublish = millis();
-
-  // TODO: Check for ext_temp_sensor, ext_bat , relay_220 variables
-  //       from wifi.update_root "copy" the variables to use
-  //  Ex. for temperature
-
-  //  sprintf(publishTopicBuf, "bluetti/%s/state/%s", wifiConfig.bluetti_device_id.c_str(), "temperature");
-  //  value = String(temperature);
-  //  if (!client.publish(publishTopicBuf, value.c_str()))
-  //  {
-  //    publishErrorCount++;
-  //  }
 }
 
 void publishDeviceStateStatus()
@@ -222,6 +240,17 @@ void initMQTT()
       subscribeTopic(bluetti_device_command[i].f_name);
     }
 
+    char subscribeTopicBuf[512];
+
+#if USE_EXT_BAT == 1
+    sprintf(subscribeTopicBuf, "bluetti/%s/command/%s", wifiConfig.bluetti_device_id.c_str(), "BAT_PWM_SWITCH");
+    client.subscribe(subscribeTopicBuf);
+#endif
+#ifdef RELAY_220_PIN
+    sprintf(subscribeTopicBuf, "bluetti/%s/command/%s", wifiConfig.bluetti_device_id.c_str(), "220_RELAY");
+    client.subscribe(subscribeTopicBuf);
+#endif
+
     publishDeviceState();
     publishDeviceStateStatus();
   }
@@ -245,6 +274,57 @@ void handleMQTT()
     publishDeviceState();
     publishDeviceStateStatus();
   }
+  char publishTopicBuf[1024];
+  String value;
+  if ((millis() - lastOtherMillis) > (DEVICE_STATE_UPDATE * 1000))
+  {
+#if USE_TEMPERATURE_SENSOR == 1
+    sprintf(publishTopicBuf, "bluetti/%s/state/%s", wifiConfig.bluetti_device_id.c_str(), "temperature");
+    value = String(temperature);
+    if (!client.publish(publishTopicBuf, value.c_str()))
+    {
+      publishErrorCount++;
+    }
+    sprintf(publishTopicBuf, "bluetti/%s/state/%s", wifiConfig.bluetti_device_id.c_str(), "humidity");
+    value = String(humidity);
+    if (!client.publish(publishTopicBuf, value.c_str()))
+    {
+      publishErrorCount++;
+    }
+#endif
+#if USE_EXT_BAT == 1
+    sprintf(publishTopicBuf, "bluetti/%s/state/%s", wifiConfig.bluetti_device_id.c_str(), "EXT_BAT_Voltage");
+    value = String(curr_EXT_Voltage);
+    if (!client.publish(publishTopicBuf, value.c_str()))
+    {
+      publishErrorCount++;
+    }
+    sprintf(publishTopicBuf, "bluetti/%s/state/%s", wifiConfig.bluetti_device_id.c_str(), "BAT_PWM_SWITCH");
+    value = "0";
+    if (_pwm_switch_status)
+    {
+      value = "1";
+    }
+    if (!client.publish(publishTopicBuf, value.c_str()))
+    {
+      publishErrorCount++;
+    }
+#endif
+#ifdef RELAY_220_PIN
+    sprintf(publishTopicBuf, "bluetti/%s/state/%s", wifiConfig.bluetti_device_id.c_str(), "220_RELAY");
+    value = "0";
+    if (_220_relay_status)
+    {
+      value = "1";
+    }
+    if (!client.publish(publishTopicBuf, value.c_str()))
+    {
+      publishErrorCount++;
+    }
+#endif
+    lastOtherMillis = millis();
+  }
+
   if (!isMQTTconnected() && publishErrorCount > 5)
   {
     if ((millis() - previousMqttReconnect) > 5000)

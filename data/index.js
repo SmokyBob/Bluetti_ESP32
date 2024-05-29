@@ -126,6 +126,10 @@ function processCommand(event) {
     document.getElementById('div_220_RELAY').style.display = 'none';
 
   }
+  if(obj.B_MQTT_CONNECTED != null){
+    document.getElementById('mqttConnected').checked = obj.B_MQTT_CONNECTED;
+    document.getElementById('MQTT_LAST_MEX_TIME').innerHTML = obj.MQTT_LAST_MEX_TIME;
+  }
 
   document.getElementById('lastWebSocketTime').innerHTML = obj.lastWebSocketTime;
 

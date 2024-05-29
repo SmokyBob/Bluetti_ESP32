@@ -437,7 +437,6 @@ void update_root()
   jsonString += "\"B_220_RELAY\" : " + pwm_str + "" + ",";
 #endif
 #ifdef USE_MQTT
-  // TODO: add to index.html
   jsonString += "\"B_MQTT_CONNECTED\" : " + String(isMQTTconnected()) + "" + ",";
   jsonString += "\"MQTT_LAST_MEX_TIME\" : \"" + convertMilliSecondsToHHMMSS(getLastMQTTMessageTime()) + "\"" + ",";
 #endif
@@ -510,6 +509,11 @@ void root_HTML(AsyncWebServerRequest *request)
   }
   else
   {
+#ifdef USE_MQTT
+    html.replace(F("%MQTT%"), F("display_block"));
+#else
+    html.replace(F("%MQQT%"), F("display_none"));
+#endif
     // Replace tags in the html template before sending it to the client
     request->send_P(200, "text/html; charset=utf-8", html.c_str(), processor);
   }

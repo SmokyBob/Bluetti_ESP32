@@ -43,8 +43,8 @@ static String ntpServer = "pool.ntp.org";
 static long gmtOffset_sec = 3600 * (+1);
 static int daylightOffset_sec = 3600;
 
-#define IFTTT            // Decomment for IFTTT support and configuration
-#define LOCAL_AUTOMATION // Decomment to use run local automation and not an external system like Home Assistant
+// #define IFTTT            // Decomment for IFTTT support and configuration
+// #define LOCAL_AUTOMATION // Decomment to use run local automation and not an external system like Home Assistant
 #define USE_MQTT         // Decomment to use MQTT
 
 // N.B. if changed, update the function config_HTML to edit the fields

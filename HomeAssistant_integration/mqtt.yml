@@ -64,6 +64,58 @@ sensor:
     unit_of_measurement: "W"
     state_class: "measurement" # only if you want long term statistics 
     value_template: "{{ value }}"
+  - device:
+      name: "EB3AXXXXXXXXXXXX"
+      model: "EB3A"
+      manufacturer: "Bluetti"
+      identifiers: 
+        - "XXXXXXXXXXXX"
+    name: "Last Device Update"
+    unique_id: "EB3AXXXXXXXXXXXX/state/device_lastMex"
+    state_topic: "bluetti/EB3AXXXXXXXXXXXX/state/device"
+    state_class: "measurement" # only if you want long term statistics 
+    value_template: "{{ value_json.LastUpdate }}"
+    # available if USE_TEMPERATURE_SENSOR == 1
+  - device:
+      name: "EB3AXXXXXXXXXXXX"
+      model: "EB3A"
+      manufacturer: "Bluetti"
+      identifiers: 
+        - "XXXXXXXXXXXX"
+    name: "Temperature"
+    unique_id: "EB3AXXXXXXXXXXXX/state/temperature"
+    state_topic: "bluetti/EB3AXXXXXXXXXXXX/state/temperature"
+    device_class: "temperature"
+    unit_of_measurement: "C"
+    state_class: "measurement" # only if you want long term statistics 
+    value_template: "{{ value }}"
+  - device:
+      name: "EB3AXXXXXXXXXXXX"
+      model: "EB3A"
+      manufacturer: "Bluetti"
+      identifiers: 
+        - "XXXXXXXXXXXX"
+    name: "Humidity"
+    unique_id: "EB3AXXXXXXXXXXXX/state/humidity"
+    state_topic: "bluetti/EB3AXXXXXXXXXXXX/state/humidity"
+    device_class: "humidity"
+    unit_of_measurement: "%"
+    state_class: "measurement" # only if you want long term statistics 
+    value_template: "{{ value }}"
+    # available if USE_EXT_BAT == 1
+  - device:
+      name: "EB3AXXXXXXXXXXXX"
+      model: "EB3A"
+      manufacturer: "Bluetti"
+      identifiers: 
+        - "XXXXXXXXXXXX"
+    name: "External Battery Voltage"
+    unique_id: "EB3AXXXXXXXXXXXX/state/EXT_BAT_Voltage"
+    state_topic: "bluetti/EB3AXXXXXXXXXXXX/state/EXT_BAT_Voltage"
+    device_class: "voltage"
+    unit_of_measurement: "V"
+    state_class: "measurement" # only if you want long term statistics 
+    value_template: "{{ value }}"
 
 binary_sensor:
   - device:
@@ -105,6 +157,36 @@ switch:
     unique_id: "EB3AXXXXXXXXXXXX/state/dc_output_on"
     state_topic: "bluetti/EB3AXXXXXXXXXXXX/state/dc_output_on"
     command_topic: "bluetti/EB3AXXXXXXXXXXXX/command/dc_output_on"
+    payload_on: 1
+    payload_off: 0
+    state_on: 1
+    state_off: 0
+    # available if USE_EXT_BAT == 1
+  - device:
+      name: "EB3AXXXXXXXXXXXX"
+      model: "EB3A"
+      manufacturer: "Bluetti"
+      identifiers:
+        - "XXXXXXXXXXXX"
+    name: "EXT Battery DC IN Switch"
+    unique_id: "EB3AXXXXXXXXXXXX/state/BAT_PWM_SWITCH"
+    state_topic: "bluetti/EB3AXXXXXXXXXXXX/state/BAT_PWM_SWITCH"
+    command_topic: "bluetti/EB3AXXXXXXXXXXXX/command/BAT_PWM_SWITCH"
+    payload_on: 1
+    payload_off: 0
+    state_on: 1
+    state_off: 0
+    # available ifdef RELAY_220_PIN
+  - device:
+      name: "EB3AXXXXXXXXXXXX"
+      model: "EB3A"
+      manufacturer: "Bluetti"
+      identifiers:
+        - "XXXXXXXXXXXX"
+    name: "220V AC IN Switch"
+    unique_id: "EB3AXXXXXXXXXXXX/state/220_RELAY"
+    state_topic: "bluetti/EB3AXXXXXXXXXXXX/state/220_RELAY"
+    command_topic: "bluetti/EB3AXXXXXXXXXXXX/command/220_RELAY"
     payload_on: 1
     payload_off: 0
     state_on: 1
