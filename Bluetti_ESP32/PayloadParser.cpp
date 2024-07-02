@@ -203,7 +203,7 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
         default:
           break;
         }
-        
+
 #ifdef USE_MQTT
         publishTopic(bluetti_device_state[i].f_name, bluetti_state_data[i].f_value);
 #endif
@@ -352,6 +352,13 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
           // Turn off the 220v Input
           b220On = false;
         }
+      }
+#else
+      // if less than 15 force rechage
+      if (curr_TOTAL_BATTERY_PERCENT <= 15)
+      {
+        // Turn on the 220v Input
+        b220On = true;
       }
 #endif
 

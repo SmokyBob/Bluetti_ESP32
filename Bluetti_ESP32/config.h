@@ -44,7 +44,7 @@ static long gmtOffset_sec = 3600 * (+1);
 static int daylightOffset_sec = 3600;
 
 // #define IFTTT            // Decomment for IFTTT support and configuration
-// #define LOCAL_AUTOMATION // Decomment to use run local automation and not an external system like Home Assistant
+#define LOCAL_AUTOMATION // Decomment to use run local automation and not an external system like Home Assistant
 #define USE_MQTT         // Decomment to use MQTT
 
 // N.B. if changed, update the function config_HTML to edit the fields
@@ -87,12 +87,12 @@ typedef struct
   uint8_t forcedResetHRS = 0;
   bool clrSpiffOnRst = false;
 
-  #ifdef USE_MQTT
+#ifdef USE_MQTT
   String mqtt_server = "";
-  String mqtt_port  = "1883";
+  String mqtt_port = "1883";
   String mqtt_username = "";
   String mqtt_password = "";
-  #endif
+#endif
 
 } ESPBluettiSettings;
 

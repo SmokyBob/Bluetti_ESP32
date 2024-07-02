@@ -226,6 +226,11 @@ bool connectToServer()
   digitalWrite(RELAIS_PIN, RELAIS_HIGH);
 #endif
 
+  #if defined(LOCAL_AUTOMATION)
+  //we are connected, force dc on
+  handleBTCommand("DC_OUTPUT_ON", "1");
+  #endif
+
   return true;
 }
 
