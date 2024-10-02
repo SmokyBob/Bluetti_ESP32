@@ -15,7 +15,9 @@
 #endif
 
 #if USE_TEMPERATURE_SENSOR == 1
-SHT2x tempSensor;
+TwoWire I2Cone = TwoWire(1);
+
+SHT2x tempSensor(&I2Cone);
 #endif
 
 void setup()
@@ -46,7 +48,8 @@ void setup()
 #endif
 
 #if USE_TEMPERATURE_SENSOR == 1
-  tempSensor.begin(TEMPERATURE_SDA_PIN, TEMPERATURE_SCL_PIN);
+  I2Cone.begin(TEMPERATURE_SDA_PIN, TEMPERATURE_SCL_PIN, 50000); // this frequency works for SHT2 and MLX90614 sensors
+  tempSensor.begin();
 #endif
 
   // Init time
