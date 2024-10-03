@@ -14,7 +14,7 @@ float humidity = 0.00;
 float vref = 1100;
 float curr_EXT_Voltage = 18.3;
 bool _pwm_switch_status = false;
-float _voltArray[5];
+float _voltArray[10];
 bool voltInitComplete = false;
 byte voltArrayindex = 0;
 
@@ -37,7 +37,7 @@ void calculateVoltage()
   _voltArray[voltArrayindex] = voltage;
   voltArrayindex = voltArrayindex + 1;
 
-  if (voltArrayindex == 5)
+  if (voltArrayindex == 10)
   {
     voltArrayindex = 0;
     if (voltInitComplete == false)
@@ -53,9 +53,9 @@ float getVoltage()
   {
 
     double sum = 0.00; // sum will be larger than an item, double for safety.
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < 10; i++)
       sum += _voltArray[i];
-    return ((float)sum) / 5; // average will be fractional, so float may be appropriate.
+    return ((float)sum) / 10; // average will be fractional, so float may be appropriate.
   }
   else
   {

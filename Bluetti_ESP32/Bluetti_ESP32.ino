@@ -110,8 +110,8 @@ void loop()
   else
   {
 #if USE_EXT_BAT == 1
-    // Calculate the voltage every second
-    if ((millis() - voltTick) > 1000)
+    // Calculate the voltage every 10 ms
+    if ((millis() - voltTick) > 10)
     {
       calculateVoltage();
       voltTick = millis();
