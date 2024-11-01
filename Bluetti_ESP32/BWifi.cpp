@@ -515,7 +515,7 @@ void root_HTML(AsyncWebServerRequest *request)
     html.replace(F("%MQQT%"), F("display_none"));
 #endif
     // Replace tags in the html template before sending it to the client
-    request->send_P(200, "text/html; charset=utf-8", html.c_str(), processor);
+    request->send(200, "text/html; charset=utf-8", html.c_str(), processor);
   }
 }
 
@@ -808,7 +808,7 @@ void config_HTML(AsyncWebServerRequest *request, bool paramsSaved = false, bool 
     html.replace(F("%MQQT%"), F(""));
 #endif
     // Replace tags in the html template before sending it to the client
-    request->send_P(200, "text/html; charset=utf-8", html.c_str(), processor_config);
+    request->send(200, "text/html; charset=utf-8", html.c_str(), processor_config);
   }
 
   _rebootDevice = resetRequired;
