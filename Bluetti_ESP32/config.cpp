@@ -17,13 +17,18 @@ bool _pwm_switch_status = false;
 float _voltArray[50];
 bool voltInitComplete = false;
 byte voltArrayindex = 0;
+const int BATTERY_SENSE_SAMPLES = 5000;
 
 void calculateVoltage()
 {
   // Calculate the current voltage and add it to the last five values array
   float calibration = wifiConfig.volt_calibration; // Adjust for ultimate accuracy when input is measured using an accurate DVM, if reading too high then use e.g. 0.99, too low use 1.01
 
-  float analog = (float)analogRead(VOLT_PIN);
+  float analog ;
+  for (uint32_t i = 0; i < BATTERY_SENSE_SAMPLES; i++) {
+      analog += (float)analogRead(VOLT_PIN);
+  }
+  analog = analog / BATTERY_SENSE_SAMPLES;
   Serial.printf("analog voltage %.2f \n", curr_EXT_Voltage);
   // R1 10k, R2 2.2k, output 3.3v e fatto calcolare input massimo = 18.3, massimo a batteria piena sono 14.6 (lifepo4)
   float voltage = analog / 4095   // Risoluzione ADC
@@ -34,34 +39,10 @@ void calculateVoltage()
                      2200) *
                   calibration;
 
-  _voltArray[voltArrayindex] = voltage;
-  voltArrayindex = voltArrayindex + 1;
-
-  if (voltArrayindex == 50)
-  {
-    voltArrayindex = 0;
-    if (voltInitComplete == false)
-    {
-      voltInitComplete = true;
-    }
-  }
+  curr_EXT_Voltage = voltage;
 }
 
-float getVoltage()
-{
-  if (voltInitComplete)
-  {
 
-    double sum = 0.00; // sum will be larger than an item, double for safety.
-    for (int i = 0; i < 50; i++)
-      sum += _voltArray[i];
-    return ((float)sum) / 50; // average will be fractional, so float may be appropriate.
-  }
-  else
-  {
-    return _voltArray[voltArrayindex];
-  }
-};
 
 void setSwitch(bool bON)
 {

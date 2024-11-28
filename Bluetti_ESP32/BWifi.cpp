@@ -894,7 +894,7 @@ void config_POST(AsyncWebServerRequest *request)
     oldVolt = oldVolt / wifiConfig.volt_calibration;
 
     wifiConfig.volt_calibration = newVolt / oldVolt;
-    curr_EXT_Voltage = getVoltage();
+    calculateVoltage();
   }
 #endif
 

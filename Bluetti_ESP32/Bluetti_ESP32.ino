@@ -110,8 +110,8 @@ void loop()
   else
   {
 #if USE_EXT_BAT == 1
-    // Calculate the voltage every 10 ms
-    if ((millis() - voltTick) > 10)
+    // Calculate the voltage every 1 s
+    if ((millis() - voltTick) > 1000)
     {
       calculateVoltage();
       voltTick = millis();
@@ -134,7 +134,6 @@ void loop()
       humidity = tempSensor.getHumidity();
 #endif
 #if USE_EXT_BAT == 1
-      curr_EXT_Voltage = getVoltage();
       Serial.printf("Voltage %.2f \n", curr_EXT_Voltage);
 #endif
 
