@@ -174,7 +174,7 @@ void loop()
   }
 #endif
 #ifdef USE_MQTT
-handleMQTT(); 
+  handleMQTT();
 #endif
 
   if (wifiConfig.forcedResetHRS != 0)

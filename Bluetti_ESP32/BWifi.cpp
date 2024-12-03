@@ -1214,6 +1214,7 @@ void handleWebserver()
   }
 
   webSocket.cleanupClients();
+  ElegantOTA.loop();
 }
 
 String runningSince;

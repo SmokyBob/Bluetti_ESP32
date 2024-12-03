@@ -14,9 +14,6 @@ float humidity = 0.00;
 float vref = 1100;
 float curr_EXT_Voltage = 18.3;
 bool _pwm_switch_status = false;
-float _voltArray[50];
-bool voltInitComplete = false;
-byte voltArrayindex = 0;
 const int BATTERY_SENSE_SAMPLES = 5000;
 
 void calculateVoltage()
