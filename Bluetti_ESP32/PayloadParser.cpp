@@ -360,6 +360,11 @@ void parse_bluetooth_data(uint8_t page, uint8_t offset, uint8_t *pData, size_t l
         // Turn on the 220v Input
         b220On = true;
       }
+      if (curr_TOTAL_BATTERY_PERCENT >= 1)
+      {
+        // Turn on the DC output
+        handleBTCommand("DC_OUTPUT_ON", "1");
+      }
 #endif
 
       Serial.printf("220_relay_status %s transition to %s \n", String(_220_relay_status), String(b220On));
